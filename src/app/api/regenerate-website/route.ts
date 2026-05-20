@@ -15,6 +15,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "url is required" }, { status: 400 });
   }
 
+  try {
+    new URL(url);
+  } catch {
+    return NextResponse.json({ error: "url is not a valid URL" }, { status: 400 });
+  }
+
+  if (!QUEUE_URL) {
+    return NextResponse.json(
+      { error: "SQS queue URL is not configured" },
+      { status: 500 }
+    );
+  }
+
   const RegeneratedWebsiteId = randomUUID();
 
   const messageBody = JSON.stringify({
@@ -32,9 +45,10 @@ export async function POST(req: NextRequest) {
         MessageDeduplicationId: RegeneratedWebsiteId,
       })
     );
-  } catch {
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "Failed to queue website regeneration" },
+      { error: "Failed to queue website regeneration", details: message },
       { status: 500 }
     );
   }
