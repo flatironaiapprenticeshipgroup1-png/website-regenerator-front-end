@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
         { status: 404 },
       );
     }
+
     return NextResponse.json(result.Items[0], { status: 200 });
   } catch (error) {
     console.error("Error fetching data from DynamoDB:", error);
