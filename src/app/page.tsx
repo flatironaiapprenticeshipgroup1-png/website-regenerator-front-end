@@ -1,66 +1,19 @@
-'use client';
+"use client";
 
-/**
- * Home page — Website Regenerator
- *
- * Renders a two-panel UI:
- *   1. Job submission form  — collects a target URL and an optional theme string,
- *      then POSTs to /api/regenerate-website.
- *   2. Status panel          — shown after a job is submitted; displays live
- *      progress updates received over Ably (channel `regeneration:<jobId>`,
- *      event `regeneration-status`) and a one-time DynamoDB snapshot polled
- *      from /api/regenerate-website/<jobId> on mount.
- *
- * Out-of-order Ably messages are discarded via a monotonically-increasing
- * sequence number tracked in `latestSeqRef`.
- */
-
+import styles from "./page.module.css";
+import CircuitBackground from "../components/CircuitBackground";
 import * as Ably from 'ably';
 import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import type { RegenerationStatus } from '../types/status';
 
-/**
- * Human-readable labels for each processing step reported by the backend.
- * Keys match the `step` field on {@link RegenerationStatus}.
- */
-const STEP_LABELS: Record<string, string> = {
-  received: 'Request received',
-  crawling_html: 'Crawling HTML',
-  extracting_css: 'Extracting CSS',
-  saving_original_assets: 'Saving original assets',
-  saving_metadata: 'Saving metadata',
-  queueing_ai: 'Queuing AI step',
-  reading_source_css: 'Reading source CSS',
-  building_prompt: 'Building AI prompt',
-  calling_openai: 'Calling OpenAI',
-  saving_regenerated_css: 'Saving regenerated CSS',
-  completed: 'Complete',
-  failed: 'Failed',
-};
-
 export default function Home() {
-  /** Target website URL entered by the user. */
-  const [url, setUrl] = useState('');
-
-  /** Optional regeneration theme (e.g. "dark", "minimalist"). */
-  const [theme, setTheme] = useState('');
-
-  /**
-   * ID returned by /api/regenerate-website after a successful POST.
-   * Doubles as the key that drives both useEffect hooks below.
-   */
+  const [url, setUrl] = useState("");
+  const [theme, setTheme] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [jobId, setJobId] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  /** Latest status snapshot — updated by DynamoDB poll and Ably messages. */
-  const [status, setStatus] = useState<RegenerationStatus | null>(null);
-
-  /** True while the POST /api/regenerate-website request is in-flight. */
-  const [submitting, setSubmitting] = useState(false);
-
-  /** Non-null when the submission API returns an error. */
-  const [formError, setFormError] = useState<string | null>(null);
-
-  /** Holds the active Ably.Realtime instance so the cleanup function can close it. */
+    /** Holds the active Ably.Realtime instance so the cleanup function can close it. */
   const ablyRef = useRef<Ably.Realtime | null>(null);
 
   /**
@@ -70,58 +23,41 @@ export default function Home() {
    */
   const latestSeqRef = useRef<number>(-1);
 
-  /**
-   * Form submit handler.
-   * Resets all job-related state, POSTs the URL + theme to the backend,
-   * and stores the returned job ID to trigger the two useEffect hooks.
-   */
-  async function handleSubmit(e: SyntheticEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setFormError(null);
-    setSubmitting(true);
-    setStatus(null);
+  function handleReset() {
+    setStatus("idle");
+    setUrl("");
+    setTheme("");
     setJobId(null);
-    latestSeqRef.current = -1;
-
-    try {
-      const res = await fetch('/api/regenerate-website', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, regenerationTheme: theme || undefined }),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        setFormError(err.error ?? 'Submission failed');
-        return;
-      }
-      const data = await res.json();
-      setJobId(data.RegeneratedWebsiteId);
-    } finally {
-      setSubmitting(false);
-    }
   }
 
-  /**
-   * DynamoDB snapshot effect.
-   *
-   * Fires once whenever `jobId` changes to a non-null value.
-   * Fetches the current status from /api/regenerate-website/<jobId> (backed by
-   * DynamoDB) and applies it if its sequence number is newer than anything
-   * already stored — this pre-populates the panel before the first Ably event.
-   */
-  useEffect(() => {
-    if (!jobId) return;
+  async function handleSubmit(e: { preventDefault(): void }) {
+    e.preventDefault();
+    setStatus("loading");
+    setJobId(null);
+    setErrorMsg(null);
 
-    fetch(`/api/regenerate-website/${jobId}`)
-      .then((r) => r.json())
-      .then((data: RegenerationStatus) => {
-        if (data.sequence !== null && data.sequence > latestSeqRef.current) {
-          latestSeqRef.current = data.sequence;
-          setStatus(data);
-        }
-      })
-      .catch(() => {});
-  }, [jobId]);
+    try {
+      const res = await fetch("/api/regenerate-website", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, regenerationTheme: theme || undefined }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setErrorMsg(data.error || "Something went wrong");
+        setStatus("error");
+        return;
+      }
+
+      setJobId(data.RegeneratedWebsiteId);
+      setStatus("success");
+    } catch {
+      setErrorMsg("Network error — please try again");
+      setStatus("error");
+    }
+  }
 
   /**
    * Ably real-time subscription effect.
@@ -160,99 +96,93 @@ export default function Home() {
     };
   }, [jobId]);
 
-  /** Resolved human-readable label for the current step, or null if unknown. */
-  const stepLabel = status?.step ? (STEP_LABELS[status.step] ?? status.step) : null;
-
   return (
-    <main style={{ maxWidth: 640, margin: '0 auto', padding: '2rem', fontFamily: 'sans-serif' }}>
-      <h1>Website Regenerator</h1>
+    <>
+      <CircuitBackground />
+      <main className={styles.main}>
+        <div className={styles.card}>
+          <div className={styles.header}>
+            <div className={styles.badge}>AI-Powered</div>
+            <h1 className={styles.title}>Website Regenerator</h1>
+            <p className={styles.subtitle}>
+              Transform any website with a new theme using generative AI
+            </p>
+          </div>
 
-      {/* ── Job submission form ── shown until a job ID is obtained */}
-      {!jobId && (
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '1rem' }}>
-            <label>
-              Website URL
+          <form className={styles.form} onSubmit={handleSubmit}>
+            <div className={styles.field}>
+              <label className={styles.label} htmlFor="url">
+                Website URL
+              </label>
               <input
+                id="url"
+                className={styles.input}
                 type="url"
-                required
+                placeholder="https://example.com"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://example.com"
-                style={{ display: 'block', width: '100%', marginTop: 4 }}
+                required
+                disabled={status === "loading"}
               />
-            </label>
-          </div>
-          <div style={{ marginBottom: '1rem' }}>
-            <label>
-              Theme (optional)
+            </div>
+
+            <div className={styles.field}>
+              <label className={styles.label} htmlFor="theme">
+                Regeneration Theme <span className={styles.optional}>(optional)</span>
+              </label>
               <input
+                id="theme"
+                className={styles.input}
                 type="text"
+                placeholder="e.g. cyberpunk, minimalist, retro 80s..."
                 value={theme}
                 onChange={(e) => setTheme(e.target.value)}
-                placeholder="e.g. dark, minimalist, neon"
-                style={{ display: 'block', width: '100%', marginTop: 4 }}
+                disabled={status === "loading"}
               />
-            </label>
-          </div>
-          {formError && <p style={{ color: 'red' }}>{formError}</p>}
-          <button type="submit" disabled={submitting}>
-            {submitting ? 'Submitting…' : 'Regenerate'}
-          </button>
-        </form>
-      )}
+            </div>
 
-      {/* ── Status panel ── shown while a job is active */}
-      {jobId && (
-        <section style={{ marginTop: '2rem' }}>
-          <p style={{ fontSize: '0.85rem', color: '#666' }}>Job ID: {jobId}</p>
+            <button
+              className={styles.button}
+              type="submit"
+              disabled={status === "loading"}
+            >
+              {status === "loading" ? (
+                <span className={styles.spinner} />
+              ) : (
+                "Regenerate Website"
+              )}
+            </button>
+          </form>
 
-          {/* No status yet — waiting for first DynamoDB snapshot or Ably event */}
-          {!status && <p>Waiting for first update…</p>}
+          {status === "success" && jobId && (
+            <>
+              <div className={styles.successBox}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
+                  <path d="M5 8l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <div>
+                  <p className={styles.successTitle}>Queued successfully</p>
+                  <p className={styles.jobId}>Job ID: {jobId}</p>
+                </div>
+              </div>
+              <button className={styles.resetButton} onClick={handleReset}>
+                Regenerate another →
+              </button>
+            </>
+          )}
 
-          {/* In-progress: show phase and step */}
-          {status && status.status !== 'completed' && status.status !== 'failed' && (
-            <div>
-              <p>Phase: <strong>{status.phase}</strong></p>
-              <p>Step: <strong>{stepLabel}</strong></p>
-              {status.message && <p>{status.message}</p>}
+          {status === "error" && (
+            <div className={styles.errorBox}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
+                <path d="M8 5v3M8 11h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+              <p>{errorMsg}</p>
             </div>
           )}
-
-          {/* Terminal state: failed */}
-          {status?.status === 'failed' && (
-            <div style={{ color: 'red' }}>
-              <p>Regeneration failed at step: <strong>{stepLabel}</strong></p>
-              {status.error && <p>Error: {status.error}</p>}
-            </div>
-          )}
-
-          {/* Terminal state: completed with a result URL — show inline preview */}
-          {status?.status === 'completed' && status.resultUrl && (
-            <div>
-              <p style={{ color: 'green' }}>Regeneration complete!</p>
-              <iframe
-                src={status.resultUrl}
-                title="Regenerated website"
-                style={{ width: '100%', height: 600, border: '1px solid #ccc', marginTop: '1rem' }}
-              />
-              <a href={status.resultUrl} target="_blank" rel="noreferrer">
-                Open in new tab
-              </a>
-            </div>
-          )}
-
-          {/* Terminal state: completed but no result URL available */}
-          {status?.status === 'completed' && !status.resultUrl && (
-            <p style={{ color: 'green' }}>Regeneration complete! (No result URL available.)</p>
-          )}
-
-          {/* Reset button — clears jobId/status so the form re-appears */}
-          <button style={{ marginTop: '1rem' }} onClick={() => { setJobId(null); setStatus(null); }}>
-            Start a new job
-          </button>
-        </section>
-      )}
-    </main>
+        </div>
+      </main>
+    </>
   );
 }
