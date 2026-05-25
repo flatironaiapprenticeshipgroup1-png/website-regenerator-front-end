@@ -3,25 +3,18 @@
 import { useState } from "react";
 import styles from "./page.module.css";
 import CircuitBackground from "../components/CircuitBackground";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
   const [url, setUrl] = useState("");
   const [theme, setTheme] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-  const [jobId, setJobId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  function handleReset() {
-    setStatus("idle");
-    setUrl("");
-    setTheme("");
-    setJobId(null);
-  }
+  const router = useRouter();
 
   async function handleSubmit(e: { preventDefault(): void }) {
     e.preventDefault();
     setStatus("loading");
-    setJobId(null);
     setErrorMsg(null);
 
     try {
@@ -31,17 +24,23 @@ export default function Home() {
         body: JSON.stringify({ url, regenerationTheme: theme || undefined }),
       });
 
-      const data = await res.json();
+      const data: {
+        RegeneratedWebsiteId: string;
+        RegeneratedWebsiteUrl: string;
+        RegenerationTheme?: string;
+        error?: string;
+        message?: string;
+      } = await res.json();
 
       if (!res.ok) {
         setErrorMsg(data.error || "Something went wrong");
         setStatus("error");
         return;
+      } else {
+        setStatus("success");
+        router.push(`/regenerated-website/${data.RegeneratedWebsiteId}`);
       }
-
-      setJobId(data.RegeneratedWebsiteId);
-      setStatus("success");
-    } catch {
+    } catch (error) {
       setErrorMsg("Network error — please try again");
       setStatus("error");
     }
@@ -105,23 +104,6 @@ export default function Home() {
             </button>
           </form>
 
-          {status === "success" && jobId && (
-            <>
-              <div className={styles.successBox}>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
-                  <path d="M5 8l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                <div>
-                  <p className={styles.successTitle}>Queued successfully</p>
-                  <p className={styles.jobId}>Job ID: {jobId}</p>
-                </div>
-              </div>
-              <button className={styles.resetButton} onClick={handleReset}>
-                Regenerate another →
-              </button>
-            </>
-          )}
 
           {status === "error" && (
             <div className={styles.errorBox}>
