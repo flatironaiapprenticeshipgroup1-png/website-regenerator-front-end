@@ -3,123 +3,262 @@
 import { useEffect, useRef } from "react";
 import styles from "./CircuitBackground.module.css";
 
-interface CircuitNode {
+const TAGS = [
+  '<html lang="en">',
+  "<head>",
+  '  <meta charset="UTF-8" />',
+  "  <title>Regenerated</title>",
+  '  <link rel="stylesheet" href="style.css" />',
+  "</head>",
+  "<body>",
+  "  <header>",
+  '    <nav class="navbar">',
+  '      <a href="/">Home</a>',
+  "    </nav>",
+  "  </header>",
+  "  <main>",
+  '    <section class="hero">',
+  "      <h1>Welcome</h1>",
+  "      <p>AI-generated</p>",
+  '      <button type="button">',
+  "    </section>",
+  '    <div class="container">',
+  "      <article>",
+  "        <h2>Section</h2>",
+  "        <p>Content here</p>",
+  "      </article>",
+  "    </div>",
+  "  </main>",
+  "  <footer>",
+  "    <p>&copy; 2024</p>",
+  "  </footer>",
+  "</body>",
+  "</html>",
+  '  <div id="app">',
+  '  <span class="highlight">',
+  '  <input type="text" />',
+  '  <form method="post">',
+  '  <img src="" alt="" />',
+  "  </div>",
+  "  </section>",
+  "  </form>",
+  "  <script defer>",
+  "  <style>",
+];
+
+// VS Code Dark+ colors
+const C = {
+  bracket:  "#608b4e", // < > </ />  — muted green like VS Code punctuation
+  tagName:  "#569cd6", // blue
+  attrName: "#9cdcfe", // light blue
+  attrVal:  "#ce9178", // orange
+  text:     "#d4d4d4", // light gray
+};
+
+interface Segment { text: string; color: string }
+
+interface TagInstance {
+  tag: string;
+  segments: Segment[];
   x: number;
   y: number;
+  vx: number;
+  charCount: number;
+  state: "typing" | "holding" | "fading";
+  alpha: number;
+  holdTimer: number;
+  typeDelay: number;
+  typeTimer: number;
 }
 
-interface Pulse {
-  fromNode: number;
-  toNode: number;
-  progress: number;
-  speed: number;
+function hexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${alpha.toFixed(3)})`;
 }
 
-function startCircuitAnimation(canvas: HTMLCanvasElement): () => void {
-  const ctx = canvas.getContext("2d")!;
+function tokenize(raw: string): Segment[] {
+  const tokens: Segment[] = [];
+  let s = raw;
 
-  let nodes: CircuitNode[] = [];
-  let connections: [number, number][] = [];
-  let pulses: Pulse[] = [];
-
-  function buildGraph() {
-    nodes = [];
-    connections = [];
-    pulses = [];
-
-    for (let i = 0; i < 70; i++) {
-      nodes.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height });
+  while (s.length > 0) {
+    const ws = s.match(/^(\s+)/);
+    if (ws) {
+      tokens.push({ text: ws[1], color: C.text });
+      s = s.slice(ws[1].length);
+      continue;
     }
 
-    for (let i = 0; i < nodes.length; i++) {
-      for (let j = i + 1; j < nodes.length; j++) {
-        const dx = nodes[i].x - nodes[j].x;
-        const dy = nodes[i].y - nodes[j].y;
-        if (Math.sqrt(dx * dx + dy * dy) < 220) {
-          connections.push([i, j]);
-        }
+    if (s.startsWith("<")) {
+      if (s.startsWith("</")) {
+        tokens.push({ text: "</", color: C.bracket });
+        s = s.slice(2);
+      } else {
+        tokens.push({ text: "<", color: C.bracket });
+        s = s.slice(1);
       }
+
+      const name = s.match(/^([a-zA-Z][a-zA-Z0-9]*)/);
+      if (name) {
+        tokens.push({ text: name[1], color: C.tagName });
+        s = s.slice(name[1].length);
+      }
+
+      while (s.length > 0 && !s.startsWith(">") && !s.startsWith("/>")) {
+        const space = s.match(/^(\s+)/);
+        if (space) {
+          tokens.push({ text: space[1], color: C.text });
+          s = s.slice(space[1].length);
+          continue;
+        }
+        const attr = s.match(/^([a-zA-Z_:][a-zA-Z0-9_:.-]*)/);
+        if (attr) {
+          tokens.push({ text: attr[1], color: C.attrName });
+          s = s.slice(attr[1].length);
+          if (s.startsWith("=")) {
+            tokens.push({ text: "=", color: C.text });
+            s = s.slice(1);
+            if (s.startsWith('"')) {
+              const end = s.indexOf('"', 1);
+              const val = end !== -1 ? s.slice(0, end + 1) : s;
+              tokens.push({ text: val, color: C.attrVal });
+              s = s.slice(val.length);
+            }
+          }
+          continue;
+        }
+        tokens.push({ text: s[0], color: C.text });
+        s = s.slice(1);
+      }
+
+      if (s.startsWith("/>")) {
+        tokens.push({ text: "/>", color: C.bracket });
+        s = s.slice(2);
+      } else if (s.startsWith(">")) {
+        tokens.push({ text: ">", color: C.bracket });
+        s = s.slice(1);
+      }
+      continue;
     }
 
-    for (let i = 0; i < 20; i++) {
-      const conn = connections[Math.floor(Math.random() * connections.length)];
-      pulses.push({
-        fromNode: conn[0],
-        toNode: conn[1],
-        progress: Math.random(),
-        speed: 0.0015 + Math.random() * 0.003,
-      });
-    }
+    const next = s.indexOf("<");
+    const chunk = next === -1 ? s : s.slice(0, next);
+    tokens.push({ text: chunk, color: C.text });
+    s = s.slice(chunk.length);
   }
 
+  return tokens;
+}
+
+function makeTag(canvas: HTMLCanvasElement): TagInstance {
+  const tag = TAGS[Math.floor(Math.random() * TAGS.length)];
+  return {
+    tag,
+    segments: tokenize(tag),
+    x: 20 + Math.random() * (canvas.width - 250),
+    y: 20 + Math.random() * (canvas.height - 40),
+    vx: 0.3 + Math.random() * 0.5,
+    charCount: 0,
+    state: "typing",
+    alpha: 0.45,
+    holdTimer: 0,
+    typeDelay: 2 + Math.floor(Math.random() * 4),
+    typeTimer: 0,
+  };
+}
+
+function startAnimation(canvas: HTMLCanvasElement): () => void {
+  const ctx = canvas.getContext("2d")!;
+  let instances: TagInstance[] = [];
+  let frame = 0;
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+  function init() {
+    instances = Array.from({ length: 20 }, () => {
+      const inst = makeTag(canvas);
+      const p = Math.random();
+      if (p > 0.4) inst.charCount = Math.floor(p * inst.tag.length);
+      if (p > 0.85) {
+        inst.charCount = inst.tag.length;
+        inst.state = "holding";
+        inst.holdTimer = Math.random() * 60;
+      }
+      return inst;
+    });
+  }
 
   function resize() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     if (debounceTimer !== null) clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(buildGraph, 150);
+    debounceTimer = setTimeout(init, 150);
   }
 
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
-  buildGraph();
+  init();
   window.addEventListener("resize", resize);
 
   let animId: number;
 
   function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    frame++;
     ctx.fillStyle = "#000";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.lineWidth = 1;
-    for (const [a, b] of connections) {
-      ctx.strokeStyle = "rgba(255,255,255,0.06)";
-      ctx.beginPath();
-      ctx.moveTo(nodes[a].x, nodes[a].y);
-      ctx.lineTo(nodes[b].x, nodes[a].y);
-      ctx.lineTo(nodes[b].x, nodes[b].y);
-      ctx.stroke();
-    }
-
-    for (const node of nodes) {
-      ctx.beginPath();
-      ctx.arc(node.x, node.y, 2.5, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(255,255,255,0.2)";
-      ctx.fill();
-    }
-
-    for (const pulse of pulses) {
-      pulse.progress += pulse.speed;
-      if (pulse.progress >= 1) {
-        pulse.progress = 0;
-        const conn = connections[Math.floor(Math.random() * connections.length)];
-        pulse.fromNode = conn[0];
-        pulse.toNode = conn[1];
+    // Dot texture
+    const spacing = 28;
+    ctx.fillStyle = "rgba(255,255,255,0.12)";
+    for (let x = spacing; x < canvas.width; x += spacing) {
+      for (let y = spacing; y < canvas.height; y += spacing) {
+        ctx.beginPath();
+        ctx.arc(x, y, 0.75, 0, Math.PI * 2);
+        ctx.fill();
       }
+    }
 
-      const from = nodes[pulse.fromNode];
-      const to = nodes[pulse.toNode];
-      const t = pulse.progress;
+    ctx.font = "12px monospace";
+    ctx.textBaseline = "top";
 
-      let px: number, py: number;
-      if (t < 0.5) {
-        px = from.x + (to.x - from.x) * (t * 2);
-        py = from.y;
+    for (const inst of instances) {
+      if (inst.state === "typing") {
+        if (++inst.typeTimer >= inst.typeDelay) {
+          inst.typeTimer = 0;
+          inst.charCount = Math.min(inst.tag.length, inst.charCount + 1);
+        }
+        if (inst.charCount >= inst.tag.length) {
+          inst.state = "holding";
+          inst.holdTimer = 50 + Math.floor(Math.random() * 100);
+        }
+      } else if (inst.state === "holding") {
+        if (--inst.holdTimer <= 0) inst.state = "fading";
       } else {
-        px = to.x;
-        py = from.y + (to.y - from.y) * ((t - 0.5) * 2);
+        inst.alpha -= 0.004;
+        if (inst.alpha <= 0) Object.assign(inst, makeTag(canvas));
       }
 
-      const grad = ctx.createRadialGradient(px, py, 0, px, py, 8);
-      grad.addColorStop(0, "rgba(255,255,255,0.95)");
-      grad.addColorStop(0.4, "rgba(200,200,200,0.4)");
-      grad.addColorStop(1, "rgba(255,255,255,0)");
-      ctx.beginPath();
-      ctx.arc(px, py, 8, 0, Math.PI * 2);
-      ctx.fillStyle = grad;
-      ctx.fill();
+      inst.x += inst.vx;
+      if (inst.x > canvas.width + 20) Object.assign(inst, makeTag(canvas));
+
+      // Draw each colored segment up to charCount
+      let charsLeft = inst.charCount;
+      let curX = inst.x;
+
+      for (const seg of inst.segments) {
+        if (charsLeft <= 0) break;
+        const visible = charsLeft >= seg.text.length ? seg.text : seg.text.slice(0, charsLeft);
+        charsLeft -= seg.text.length;
+        ctx.fillStyle = hexToRgba(seg.color, inst.alpha);
+        ctx.fillText(visible, curX, inst.y);
+        curX += ctx.measureText(visible).width;
+      }
+
+      // Blinking cursor while typing
+      if (inst.state === "typing" && Math.floor(frame / 30) % 2 === 0) {
+        ctx.fillStyle = hexToRgba(C.text, inst.alpha);
+        ctx.fillRect(curX, inst.y + 1, 1, 11);
+      }
     }
 
     animId = requestAnimationFrame(draw);
@@ -140,7 +279,7 @@ export default function CircuitBackground() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    return startCircuitAnimation(canvas);
+    return startAnimation(canvas);
   }, []);
 
   return <canvas ref={canvasRef} className={styles.canvas} />;
