@@ -1,3 +1,4 @@
+"use client"
 import { useEffect, useRef, useState, type SyntheticEvent } from 'react';
 import type { RegenerationStatus } from '../../../types/status';
 import * as Ably from 'ably';
