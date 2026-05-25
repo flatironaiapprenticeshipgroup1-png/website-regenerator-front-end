@@ -1,66 +1,139 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
 import styles from "./page.module.css";
+import CircuitBackground from "../components/CircuitBackground";
 
 export default function Home() {
+  const [url, setUrl] = useState("");
+  const [theme, setTheme] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [jobId, setJobId] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  function handleReset() {
+    setStatus("idle");
+    setUrl("");
+    setTheme("");
+    setJobId(null);
+  }
+
+  async function handleSubmit(e: { preventDefault(): void }) {
+    e.preventDefault();
+    setStatus("loading");
+    setJobId(null);
+    setErrorMsg(null);
+
+    try {
+      const res = await fetch("/api/regenerate-website", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, regenerationTheme: theme || undefined }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setErrorMsg(data.error || "Something went wrong");
+        setStatus("error");
+        return;
+      }
+
+      setJobId(data.RegeneratedWebsiteId);
+      setStatus("success");
+    } catch {
+      setErrorMsg("Network error — please try again");
+      setStatus("error");
+    }
+  }
+
   return (
-    <div className={styles.page}>
+    <>
+      <CircuitBackground />
       <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.tsx file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
+        <div className={styles.card}>
+          <div className={styles.header}>
+            <div className={styles.badge}>AI-Powered</div>
+            <h1 className={styles.title}>Website Regenerator</h1>
+            <p className={styles.subtitle}>
+              Transform any website with a new theme using generative AI
+            </p>
+          </div>
+
+          <form className={styles.form} onSubmit={handleSubmit}>
+            <div className={styles.field}>
+              <label className={styles.label} htmlFor="url">
+                Website URL
+              </label>
+              <input
+                id="url"
+                className={styles.input}
+                type="url"
+                placeholder="https://example.com"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                required
+                disabled={status === "loading"}
+              />
+            </div>
+
+            <div className={styles.field}>
+              <label className={styles.label} htmlFor="theme">
+                Regeneration Theme <span className={styles.optional}>(optional)</span>
+              </label>
+              <input
+                id="theme"
+                className={styles.input}
+                type="text"
+                placeholder="e.g. cyberpunk, minimalist, retro 80s..."
+                value={theme}
+                onChange={(e) => setTheme(e.target.value)}
+                disabled={status === "loading"}
+              />
+            </div>
+
+            <button
+              className={styles.button}
+              type="submit"
+              disabled={status === "loading"}
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+              {status === "loading" ? (
+                <span className={styles.spinner} />
+              ) : (
+                "Regenerate Website"
+              )}
+            </button>
+          </form>
+
+          {status === "success" && jobId && (
+            <>
+              <div className={styles.successBox}>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
+                  <path d="M5 8l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <div>
+                  <p className={styles.successTitle}>Queued successfully</p>
+                  <p className={styles.jobId}>Job ID: {jobId}</p>
+                </div>
+              </div>
+              <button className={styles.resetButton} onClick={handleReset}>
+                Regenerate another →
+              </button>
+            </>
+          )}
+
+          {status === "error" && (
+            <div className={styles.errorBox}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
+                <path d="M8 5v3M8 11h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+              <p>{errorMsg}</p>
+            </div>
+          )}
         </div>
       </main>
-    </div>
+    </>
   );
 }
