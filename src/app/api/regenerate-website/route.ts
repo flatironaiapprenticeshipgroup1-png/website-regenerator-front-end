@@ -45,6 +45,11 @@ export async function POST(req: NextRequest) {
         MessageDeduplicationId: RegeneratedWebsiteId,
       })
     );
+    return NextResponse.json({ 
+      RegeneratedWebsiteId,  
+      RegeneratedWebsiteUrl: url, 
+      RegenerationTheme: regenerationTheme
+    }, { status: 202 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
@@ -52,6 +57,4 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
-
-  return NextResponse.json({ RegeneratedWebsiteId }, { status: 202 });
 }
