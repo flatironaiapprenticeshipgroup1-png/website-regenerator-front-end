@@ -25,8 +25,10 @@ export default function FinalizedRegeneratedWebsite({ id }: { id: string }) {
           setUrl(data.ResultUrl);
           setOriginalUrl(data.RegeneratedWebsiteUrl);
         }
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err: unknown) {
+        setError(
+          err instanceof Error ? err.message : "An unknown error occurred",
+        );
       } finally {
         setLoading(false);
       }
