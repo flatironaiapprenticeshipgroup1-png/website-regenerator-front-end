@@ -3,10 +3,16 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import type { RegenerationStatus } from '../../../types/status';
 import * as Ably from 'ably';
+import RegeneratedWebsite from '@/types/regeneratedWebsite';
+import LoadingRegeneratedWebsite from '@/components/LoadingRegeneratedWebsite';
 
 export default function RegeneratedWebsitePage() {
   const { id } = useParams<{ id: string }>();
   const [status, setStatus] = useState<RegenerationStatus | null>(null);
+  const [showRegeneratedWebsite, setShowRegeneratedWebsite] = useState(false);
+  const [currentStep, setCurrentStep] = useState<string | null>('');
+  const [regeneratedWebsiteRecord, setRegeneratedWebsiteRecord] = useState<RegeneratedWebsite | null>(null);
+  const [recordLoaded, setRecordLoaded] = useState(false);
 
   const ablyRef = useRef<Ably.Realtime | null>(null);
   const latestSeqRef = useRef<number>(-1);
@@ -37,6 +43,7 @@ export default function RegeneratedWebsitePage() {
 
       latestSeqRef.current = payload.sequence ?? -1;
       setStatus(payload);
+      setCurrentStep(payload.message as string);
     };
 
     channel.subscribe('regeneration-status', handleStatusMessage);
@@ -48,9 +55,40 @@ export default function RegeneratedWebsitePage() {
     };
   }, [id]);
 
+  useEffect(() => {
+    if (!id) return;
+
+    async function fetchRegeneratedWebsite() {  
+
+
+    fetch(`/api/get-regenerated-website?RegeneratedWebsiteId=${id}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        console.log("data", data);
+        if (data) setRegeneratedWebsiteRecord(data);
+        setRecordLoaded(true);
+      });
+    }
+
+    fetchRegeneratedWebsite()
+  }, [id]);
+  
+  console.log(regeneratedWebsiteRecord)
+  if(showRegeneratedWebsite){
+    return(
+      <div>regenerated website placeholder</div>
+    )
+  }
+
   return (
     <div>
-        regen page
+        <LoadingRegeneratedWebsite
+        regeneratedWebsiteRecord={regeneratedWebsiteRecord}
+        recordLoaded={recordLoaded}
+        setShowRegeneratedWebsite={setShowRegeneratedWebsite}
+        currentStep={currentStep ?? ''}
+        status={status}
+        />
     </div>
   );
 }
