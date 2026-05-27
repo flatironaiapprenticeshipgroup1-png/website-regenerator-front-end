@@ -75,18 +75,24 @@ export default function RegeneratedWebsitePage() {
 
   console.log(regeneratedWebsiteRecord);
   if (showRegeneratedWebsite) {
-    return <FinalizedRegeneratedWebsite id={id} RegneratedWebsiteRecord={regeneratedWebsiteRecord!} />;
+    return (
+    
+    <FinalizedRegeneratedWebsite id={id} RegeneratedWebsiteRecord={regeneratedWebsiteRecord!} />
+  
+  )
+  } else {
+    return (
+      <div>
+        <LoadingRegeneratedWebsite
+          regeneratedWebsiteRecord={regeneratedWebsiteRecord}
+          recordLoaded={recordLoaded}
+          setShowRegeneratedWebsite={setShowRegeneratedWebsite}
+          currentStep={currentStep ?? ""}
+          status={status}
+        />
+      </div>
+    );
   }
 
-  return (
-    <div>
-      <LoadingRegeneratedWebsite
-        regeneratedWebsiteRecord={regeneratedWebsiteRecord}
-        recordLoaded={recordLoaded}
-        setShowRegeneratedWebsite={setShowRegeneratedWebsite}
-        currentStep={currentStep ?? ""}
-        status={status}
-      />
-    </div>
-  );
+
 }
