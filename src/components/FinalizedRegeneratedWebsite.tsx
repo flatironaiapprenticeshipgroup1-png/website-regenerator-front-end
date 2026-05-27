@@ -1,54 +1,14 @@
 "use client";
+import RegeneratedWebsite from "@/types/regeneratedWebsite";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 
-export default function FinalizedRegeneratedWebsite({ id }: { id: string }) {
-  const [url, setUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [originalUrl, setOriginalUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchUrl = async () => {
-      try {
-        const response = await fetch(
-          `/api/get-regenerated-website?RegeneratedWebsiteId=${id}`,
-        );
-        if (!response.ok) {
-          throw new Error(`Error fetching URL: ${response.statusText}`);
-        }
-        const data = await response.json();
-
-        if (!data.ResultUrl) {
-          throw new Error("Result URL not ready yet. Please try again later.");
-        } else {
-          setUrl(data.ResultUrl);
-          setOriginalUrl(data.RegeneratedWebsiteUrl);
-        }
-      } catch (err: unknown) {
-        setError(
-          err instanceof Error ? err.message : "An unknown error occurred",
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUrl();
-  }, [id]);
-  if (loading) {
-    return <p>Loading...</p>;
-  }
-  if (error) {
-    return (
-      <div>
-        <p>Error: {error}</p>
-        <button onClick={() => window.location.reload()}>Retry</button>
-        <Link href="/" style={{ marginLeft: "16px", color: "#0070f3" }}>
-          &larr; Back to Home
-        </Link>
-      </div>
-    );
-  }
+export default function FinalizedRegeneratedWebsite({
+  id,
+  RegneratedWebsiteRecord,
+}: {
+  id: string;
+  RegneratedWebsiteRecord: RegeneratedWebsite;
+}) {
   return (
     <div
       style={{
@@ -81,16 +41,16 @@ export default function FinalizedRegeneratedWebsite({ id }: { id: string }) {
           &larr; Regenerate Another Site
         </Link>
         {/* Right - original URL */}
-        {originalUrl && (
+        {RegneratedWebsiteRecord && (
           <span style={{ fontSize: "14px", color: "#555" }}>
-            Viewing: {originalUrl}
+            Viewing: {RegneratedWebsiteRecord.RegeneratedWebsiteUrl}
           </span>
         )}
       </nav>
 
       {/* Iframe - takes up most of the screen */}
       <iframe
-        src={url || undefined}
+        src={`${process.env.S3_WEBSITE_URL}${id}`}
         title="Regenerated Website"
         style={{ width: "100%", flex: "1", border: "1px solid #ccc" }}
         sandbox="allow-scripts allow-same-origin allow-popups"
