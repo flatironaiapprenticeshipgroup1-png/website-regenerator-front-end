@@ -7,9 +7,5 @@ interface PageProps {
 export default async function RegeneratedWebsitePage({ params }: PageProps) {
   const { RegeneratedWebsiteId } = await params;
 
-  return (
-    <div>
-      <FinalizedRegeneratedWebsite id={RegeneratedWebsiteId} />
-    </div>
-  );
+  return <FinalizedRegeneratedWebsite id={RegeneratedWebsiteId} />;
 }

@@ -43,6 +43,9 @@ export default function FinalizedRegeneratedWebsite({ id }: { id: string }) {
       <div>
         <p>Error: {error}</p>
         <button onClick={() => window.location.reload()}>Retry</button>
+        <Link href="/" style={{ marginLeft: "16px", color: "#0070f3" }}>
+          &larr; Back to Home
+        </Link>
       </div>
     );
   }
@@ -80,7 +83,7 @@ export default function FinalizedRegeneratedWebsite({ id }: { id: string }) {
         {/* Right - original URL */}
         {originalUrl && (
           <span style={{ fontSize: "14px", color: "#555" }}>
-            Viewing : {originalUrl}
+            Viewing: {originalUrl}
           </span>
         )}
       </nav>
@@ -89,7 +92,8 @@ export default function FinalizedRegeneratedWebsite({ id }: { id: string }) {
       <iframe
         src={url || undefined}
         title="Regenerated Website"
-        style={{ width: "100%", height: "80vh", border: "1px solid #ccc" }}
+        style={{ width: "100%", flex: "1", border: "1px solid #ccc" }}
+        sandbox="allow-scripts allow-same-origin allow-popups"
       />
     </div>
   );
