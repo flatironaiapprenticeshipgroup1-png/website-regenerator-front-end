@@ -1,0 +1,121 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden; /* clips the bottom of the iframe instead of resizing it */
+  background: #000;
+  color: #fff;
+}
+
+/* ── Hover trigger + nav wrapper ──────────────────────────── */
+/*
+ * navWrapper lives in the flex flow so expanding it physically
+ * shrinks the iframe below rather than overlapping it.
+ * It starts at 4px — an invisible strip that acts as the hover target.
+ * On hover it grows to reveal the nav, pushing the iframe down.
+ */
+.navWrapper {
+  flex-shrink: 0;
+  overflow: hidden;
+  max-height: 4px;
+  /* Slight delay on collapse so a quick mouse-out doesn't flicker */
+  transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1) 0.1s;
+}
+
+.navWrapper:hover {
+  max-height: 80px; /* comfortably above the nav's natural ~48 px */
+  /* No delay on expand — feels instant */
+  transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── Nav bar ──────────────────────────────────────────────── */
+.nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px;
+  width: 100%;
+  background: rgba(10, 10, 10, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04), 0 8px 32px rgba(0, 0, 0, 0.5);
+
+  /* Fade in slightly behind the wrapper's expand */
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.navWrapper:hover .nav {
+  opacity: 1;
+  transition: opacity 0.2s ease 0.1s;
+}
+
+/* ── Back link ────────────────────────────────────────────── */
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.backLink:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* ── URL badge ────────────────────────────────────────────── */
+.urlBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  padding: 4px 12px;
+  max-width: 420px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.urlBadgeDot {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* ── Iframe ───────────────────────────────────────────────── */
+/*
+ * Always 100vh — never resizes. When the nav appears it pushes the
+ * iframe down and the wrapper's overflow:hidden clips the bottom edge.
+ */
+.iframe {
+  width: 100%;
+  height: 100vh;
+  flex-shrink: 0;
+  border: none;
+  display: block;
+  animation: fadeIn 0.7s ease-in-out both;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
