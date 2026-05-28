@@ -50,7 +50,7 @@ export default function FinalizedRegeneratedWebsite({
 
       {/* Iframe — nav is fixed/out-of-flow so this fills 100vh */}
       <iframe
-        src={`http://website-regeneration-s3-bucket.s3-website-us-east-1.amazonaws.com/${id}`}
+        src={`https://website-regeneration-s3-bucket.s3-website-us-east-1.amazonaws.com/${id}/`}
         title="Regenerated Website"
         className={styles.iframe}
         sandbox="allow-scripts allow-same-origin allow-popups"
