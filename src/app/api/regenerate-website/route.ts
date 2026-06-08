@@ -9,7 +9,7 @@ const sqsClient = new SQSClient({
 const QUEUE_URL = process.env.SQS_QUEUE_URL;
 
 export async function POST(req: NextRequest) {
-  const { url, regenerationTheme } = await req.json();
+  const { url, regenerationTheme, RegeneratedWebsiteId: existingId } = await req.json();
 
   if (!url) {
     return NextResponse.json({ error: "url is required" }, { status: 400 });
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const RegeneratedWebsiteId = randomUUID();
+  const RegeneratedWebsiteId = existingId ?? randomUUID();
 
   const messageBody = JSON.stringify({
     RegeneratedWebsiteId,
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
         QueueUrl: QUEUE_URL,
         MessageBody: messageBody,
         MessageGroupId: "regenerate-website-group",
-        MessageDeduplicationId: RegeneratedWebsiteId,
+        MessageDeduplicationId: randomUUID(),
       })
     );
     return NextResponse.json({ 
