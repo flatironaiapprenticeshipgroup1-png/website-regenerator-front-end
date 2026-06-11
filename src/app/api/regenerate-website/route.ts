@@ -58,12 +58,17 @@ export async function POST(req: NextRequest) {
       }),
     );
     const serviceSupabase = createServiceClient();
-    await serviceSupabase.from("regenerations").insert({
-      user_id: user.id,
-      original_url: url,
-      regenerated_website_id: RegeneratedWebsiteId,
-      regeneration_theme: regenerationTheme,
-    });
+    const { error: insertError } = await serviceSupabase
+      .from("regenerations")
+      .insert({
+        user_id: user.id,
+        original_url: url,
+        regenerated_website_id: RegeneratedWebsiteId,
+        regeneration_theme: regenerationTheme,
+      });
+    if (insertError) {
+    }
+
     return NextResponse.json(
       {
         RegeneratedWebsiteId,

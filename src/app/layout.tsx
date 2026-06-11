@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import LogoutButton from "@/components/LogoutButton";
+import Link from "next/link";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,8 +27,36 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>
-        <LogoutButton />
         {children}
+        <nav
+          style={{
+            position: "fixed",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            zIndex: 10,
+            padding: "12px 24px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            borderTop: "1px solid rgba(255,255,255,0.1)",
+            background: "rgba(10,10,10,0.85)",
+            backdropFilter: "blur(10px)",
+          }}
+        >
+          <span style={{ color: "white", fontWeight: 600 }}>
+            Website Regenerator
+          </span>
+          <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+            <Link
+              href="/history"
+              style={{ color: "rgba(255,255,255,0.7)", fontSize: "14px" }}
+            >
+              History
+            </Link>
+            <LogoutButton />
+          </div>
+        </nav>
       </body>
     </html>
   );
