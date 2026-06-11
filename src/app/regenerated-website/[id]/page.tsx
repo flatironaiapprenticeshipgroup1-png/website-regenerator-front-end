@@ -15,6 +15,7 @@ export default function RegeneratedWebsitePage() {
   const [regeneratedWebsiteRecord, setRegeneratedWebsiteRecord] =
     useState<RegeneratedWebsite | null>(null);
   const [recordLoaded, setRecordLoaded] = useState(false);
+  const [ablyMarkedComplete, setAblyMarkedComplete] = useState(false);
 
   const ablyRef = useRef<Ably.Realtime | null>(null);
   const latestSeqRef = useRef<number>(-1);
@@ -37,6 +38,10 @@ export default function RegeneratedWebsitePage() {
       console.log("Message data:", msg.data);
 
       const payload = msg.data as RegenerationStatus;
+
+      if (payload.status === "completed" && !ablyMarkedComplete) {
+        setAblyMarkedComplete(true);
+      }
 
       if ((payload.sequence ?? -1) <= latestSeqRef.current) {
         console.log("Ignored duplicate/out-of-order message:", payload);
@@ -76,10 +81,11 @@ export default function RegeneratedWebsitePage() {
   console.log(regeneratedWebsiteRecord);
   if (showRegeneratedWebsite) {
     return (
-    
-    <FinalizedRegeneratedWebsite id={id} RegeneratedWebsiteRecord={regeneratedWebsiteRecord!} />
-  
-  )
+      <FinalizedRegeneratedWebsite
+        id={id}
+        RegeneratedWebsiteRecord={regeneratedWebsiteRecord!}
+      />
+    );
   } else {
     return (
       <div>
@@ -89,10 +95,9 @@ export default function RegeneratedWebsitePage() {
           setShowRegeneratedWebsite={setShowRegeneratedWebsite}
           currentStep={currentStep ?? ""}
           status={status}
+          ablyMarkedComplete={ablyMarkedComplete}
         />
       </div>
     );
   }
-
-
 }

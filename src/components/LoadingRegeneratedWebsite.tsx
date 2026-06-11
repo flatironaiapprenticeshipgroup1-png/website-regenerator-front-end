@@ -12,12 +12,14 @@ export default function LoadingRegeneratedWebsite({
   status,
   regeneratedWebsiteRecord,
   recordLoaded,
+  ablyMarkedComplete,
 }: {
   currentStep: string;
   setShowRegeneratedWebsite: React.Dispatch<React.SetStateAction<boolean>>;
   status: RegenerationStatus | null;
   regeneratedWebsiteRecord: RegeneratedWebsite | null;
   recordLoaded: boolean;
+  ablyMarkedComplete: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const fadingRef = useRef(false);
@@ -47,19 +49,22 @@ export default function LoadingRegeneratedWebsite({
   }, [currentStep]);
 
   useEffect(() => {
-    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
   }, []);
 
   useEffect(() => {
     const isComplete =
-      status?.status === 'completed' ||
-      regeneratedWebsiteRecord?.RegenerationStatus === 'completed';
+      ablyMarkedComplete ||
+      status?.status === "completed" ||
+      regeneratedWebsiteRecord?.RegenerationStatus === "completed";
 
     if (isComplete && !fadingRef.current && containerRef.current) {
       fadingRef.current = true;
       containerRef.current.classList.add(styles.fadeOut);
     }
-  }, [status, regeneratedWebsiteRecord]);
+  }, [status, regeneratedWebsiteRecord, ablyMarkedComplete]);
 
   return (
     <div
@@ -78,7 +83,12 @@ export default function LoadingRegeneratedWebsite({
       </div>
 
       <div className={styles.textGroup}>
-        {recordLoaded && regeneratedWebsiteRecord?.RegenerationStatus !== 'completed' ?  <h2 className={styles.title}>Regenerating Website</h2> :  <></>}
+        {recordLoaded &&
+        regeneratedWebsiteRecord?.RegenerationStatus !== "completed" ? (
+          <h2 className={styles.title}>Regenerating Website</h2>
+        ) : (
+          <></>
+        )}
         <p key={displayedStep} className={styles.step}>
           {displayedStep}
         </p>
