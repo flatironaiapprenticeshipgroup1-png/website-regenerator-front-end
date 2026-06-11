@@ -1,4 +1,3 @@
-import { resolveHttpAuthRuntimeConfig } from "@aws-sdk/client-dynamodb/dist-types/auth/httpAuthExtensionConfiguration";
 import { createBrowserClient } from "@supabase/ssr";
 
 export function createClient() {
