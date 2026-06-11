@@ -5,7 +5,7 @@ export const config = {
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico|auth).*)"],
 };
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
