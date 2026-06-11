@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
+import styles from "./history.module.css";
 
 export default async function HistoryPage() {
   const supabase = await createClient();
@@ -13,37 +14,48 @@ export default async function HistoryPage() {
     .order("created_at", { ascending: false });
 
   return (
-    <div>
-      <h1 className="mb-4 text-2xl font-bold">Regeneration History</h1>
-      {!user ? (
-        <p>Please log in to view your regeneration history.</p>
-      ) : regenerations && regenerations.length > 0 ? (
-        <ul className="space-y-4">
-          {regenerations.map((regeneration) => (
-            <li key={regeneration.id} className="rounded border p-4">
-              <p>
-                <strong>Original URL:</strong> {regeneration.original_url}
-              </p>
-              <Link
-                href={`/regenerated-website/${regeneration.regenerated_website_id}`}
-                className="text-blue-500 hover:underline"
-              >
-                View Regenerated Website
-              </Link>
-              <p>
-                <strong>Regeneration Theme:</strong>{" "}
-                {regeneration.regeneration_theme || "N/A"}
-              </p>
-              <p>
-                <strong>Date:</strong>{" "}
-                {new Date(regeneration.created_at).toLocaleString()}
-              </p>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p>No regenerations found.</p>
-      )}
+    <div className={styles.page}>
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <div className={styles.badge}>Website Regenerator</div>
+          <h1 className={styles.title}>History</h1>
+        </div>
+
+        {!user ? (
+          <p className={styles.empty}>Please sign in to view your history.</p>
+        ) : regenerations && regenerations.length > 0 ? (
+          <ul className={styles.list}>
+            {regenerations.map((regeneration) => (
+              <li key={regeneration.id} className={styles.item}>
+                <p className={styles.urlLabel}>URL</p>
+                <p className={styles.url}>{regeneration.original_url}</p>
+                <div className={styles.meta}>
+                  <div className={styles.metaItem}>
+                    <span className={styles.metaLabel}>Theme</span>
+                    <span className={styles.metaValue}>
+                      {regeneration.regeneration_theme || "None"}
+                    </span>
+                  </div>
+                  <div className={styles.metaItem}>
+                    <span className={styles.metaLabel}>Date</span>
+                    <span className={styles.metaValue}>
+                      {new Date(regeneration.created_at).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+                <Link
+                  href={`/regenerated-website/${regeneration.regenerated_website_id}`}
+                  className={styles.viewLink}
+                >
+                  View regeneration →
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className={styles.empty}>No regenerations yet.</p>
+        )}
+      </div>
     </div>
   );
 }

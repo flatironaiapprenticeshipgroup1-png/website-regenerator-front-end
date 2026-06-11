@@ -28,34 +28,48 @@ export default function RootLayout({
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>
         {children}
-        <nav
-          style={{
-            position: "fixed",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            zIndex: 10,
-            padding: "12px 24px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            borderTop: "1px solid rgba(255,255,255,0.1)",
-            background: "rgba(10,10,10,0.85)",
-            backdropFilter: "blur(10px)",
-          }}
-        >
-          <span style={{ color: "white", fontWeight: 600 }}>
-            Website Regenerator
-          </span>
-          <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
-            <Link
-              href="/history"
-              style={{ color: "rgba(255,255,255,0.7)", fontSize: "14px" }}
-            >
-              History
-            </Link>
-            <LogoutButton />
-          </div>
+        <nav style={{
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          zIndex: 10,
+          padding: "12px 24px",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          gap: "8px",
+          borderTop: "1px solid rgba(255,255,255,0.1)",
+          background: "rgba(10,10,10,0.85)",
+          backdropFilter: "blur(10px)",
+        }}>
+          <Link href="/" style={{
+            color: "rgba(255,255,255,0.7)",
+            fontSize: "13px",
+            fontWeight: 500,
+            padding: "7px 16px",
+            border: "1px solid rgba(255,255,255,0.12)",
+            borderRadius: "6px",
+            textDecoration: "none",
+            background: "rgba(255,255,255,0.05)",
+            transition: "background 0.15s",
+          }}>
+            Home
+          </Link>
+          <Link href="/history" style={{
+            color: "rgba(255,255,255,0.7)",
+            fontSize: "13px",
+            fontWeight: 500,
+            padding: "7px 16px",
+            border: "1px solid rgba(255,255,255,0.12)",
+            borderRadius: "6px",
+            textDecoration: "none",
+            background: "rgba(255,255,255,0.05)",
+            transition: "background 0.15s",
+          }}>
+            History
+          </Link>
+          <LogoutButton />
         </nav>
       </body>
     </html>

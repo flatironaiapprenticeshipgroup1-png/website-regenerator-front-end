@@ -11,7 +11,8 @@ const sqsClient = new SQSClient({
 const QUEUE_URL = process.env.SQS_QUEUE_URL;
 
 export async function POST(req: NextRequest) {
-  const { url, regenerationTheme } = await req.json();
+  const { url, regenerationTheme, RegeneratedWebsiteId: existingId } = await req.json();
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const RegeneratedWebsiteId = randomUUID();
+  const RegeneratedWebsiteId = existingId ?? randomUUID();
 
   const messageBody = JSON.stringify({
     RegeneratedWebsiteId,
@@ -54,9 +55,10 @@ export async function POST(req: NextRequest) {
         QueueUrl: QUEUE_URL,
         MessageBody: messageBody,
         MessageGroupId: "regenerate-website-group",
-        MessageDeduplicationId: RegeneratedWebsiteId,
+        MessageDeduplicationId: randomUUID(),
       }),
     );
+
     const serviceSupabase = createServiceClient();
     const { error: insertError } = await serviceSupabase
       .from("regenerations")
@@ -67,6 +69,7 @@ export async function POST(req: NextRequest) {
         regeneration_theme: regenerationTheme,
       });
     if (insertError) {
+      console.error("Failed to insert regeneration record:", insertError);
     }
 
     return NextResponse.json(

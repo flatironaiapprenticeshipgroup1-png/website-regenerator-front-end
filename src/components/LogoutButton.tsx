@@ -13,11 +13,18 @@ export default function LogoutButton() {
   };
 
   return (
-    <button
-      onClick={handleLogout}
-      className="rounded bg-red-500 px-4 py-2 text-white hover:bg-red-600"
-    >
-      Logout
+    <button onClick={handleLogout} style={{
+      color: "rgba(255,100,100,0.8)",
+      fontSize: "13px",
+      fontWeight: 500,
+      padding: "7px 16px",
+      border: "1px solid rgba(255,100,100,0.25)",
+      borderRadius: "6px",
+      background: "rgba(255,100,100,0.06)",
+      cursor: "pointer",
+      fontFamily: "inherit",
+    }}>
+      Log out
     </button>
   );
 }

@@ -1,21 +1,25 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import type { RegenerationStatus } from "../../../types/status";
 import * as Ably from "ably";
 import RegeneratedWebsite from "@/types/regeneratedWebsite";
 import LoadingRegeneratedWebsite from "@/components/LoadingRegeneratedWebsite";
 import FinalizedRegeneratedWebsite from "@/components/FinalizedRegeneratedWebsite";
+import FailedRegeneratedWebsite from "@/components/FailedRegeneratedWebsite";
+
+type PageState = "loading" | "failed" | "completed";
 
 export default function RegeneratedWebsitePage() {
   const { id } = useParams<{ id: string }>();
   const [status, setStatus] = useState<RegenerationStatus | null>(null);
-  const [showRegeneratedWebsite, setShowRegeneratedWebsite] = useState(false);
+  const [pageState, setPageState] = useState<PageState>("loading");
+  const [showFinalizedWebsite, setShowFinalizedWebsite] = useState(false);
   const [currentStep, setCurrentStep] = useState<string | null>("");
   const [regeneratedWebsiteRecord, setRegeneratedWebsiteRecord] =
     useState<RegeneratedWebsite | null>(null);
   const [recordLoaded, setRecordLoaded] = useState(false);
-  const [ablyMarkedComplete, setAblyMarkedComplete] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
 
   const ablyRef = useRef<Ably.Realtime | null>(null);
   const latestSeqRef = useRef<number>(-1);
@@ -33,24 +37,23 @@ export default function RegeneratedWebsitePage() {
     const channel = client.channels.get(`regeneration:${id}`);
 
     const handleStatusMessage = (msg: Ably.Message) => {
-      console.log("New Ably message received:", msg);
-      console.log("Message name:", msg.name);
-      console.log("Message data:", msg.data);
-
       const payload = msg.data as RegenerationStatus;
 
-      if (payload.status === "completed" && !ablyMarkedComplete) {
-        setAblyMarkedComplete(true);
-      }
-
       if ((payload.sequence ?? -1) <= latestSeqRef.current) {
-        console.log("Ignored duplicate/out-of-order message:", payload);
         return;
       }
 
       latestSeqRef.current = payload.sequence ?? -1;
       setStatus(payload);
       setCurrentStep(payload.message as string);
+
+      if (payload.status === "failed") {
+        setPageState("failed");
+      } else if (payload.status === "completed") {
+        setPageState("completed");
+      } else {
+        setPageState("loading");
+      }
     };
 
     channel.subscribe("regeneration-status", handleStatusMessage);
@@ -65,39 +68,79 @@ export default function RegeneratedWebsitePage() {
   useEffect(() => {
     if (!id) return;
 
-    async function fetchRegeneratedWebsite() {
-      fetch(`/api/get-regenerated-website?RegeneratedWebsiteId=${id}`)
-        .then((res) => (res.ok ? res.json() : null))
-        .then((data) => {
-          console.log("data", data);
-          if (data) setRegeneratedWebsiteRecord(data);
-          setRecordLoaded(true);
-        });
-    }
-
-    fetchRegeneratedWebsite();
+    fetch(`/api/get-regenerated-website?RegeneratedWebsiteId=${id}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: RegeneratedWebsite | null) => {
+        if (data) {
+          setRegeneratedWebsiteRecord(data);
+          if (latestSeqRef.current === -1) {
+            if (data.RegenerationStatus === "failed") {
+              setPageState("failed");
+            } else if (data.RegenerationStatus === "completed") {
+              setPageState("completed");
+            }
+          }
+        }
+        setRecordLoaded(true);
+      });
   }, [id]);
 
-  console.log(regeneratedWebsiteRecord);
-  if (showRegeneratedWebsite) {
+  const handleTryAgain = useCallback(async () => {
+    const record = regeneratedWebsiteRecord;
+    if (!record) return;
+
+    setIsRetrying(true);
+    try {
+      await fetch("/api/regenerate-website", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: record.RegeneratedWebsiteUrl,
+          regenerationTheme: record.RegenerationTheme || undefined,
+          RegeneratedWebsiteId: id,
+        }),
+      });
+      latestSeqRef.current = -1;
+      setStatus(null);
+      setCurrentStep("");
+      setPageState("loading");
+      setShowFinalizedWebsite(false);
+    } finally {
+      setIsRetrying(false);
+    }
+  }, [id, regeneratedWebsiteRecord]);
+
+  const errorReason =
+    status?.error ?? regeneratedWebsiteRecord?.ErrorMessage ?? null;
+
+  if (showFinalizedWebsite) {
     return (
       <FinalizedRegeneratedWebsite
         id={id}
         RegeneratedWebsiteRecord={regeneratedWebsiteRecord!}
       />
     );
-  } else {
+  }
+
+  if (pageState === "failed") {
     return (
-      <div>
-        <LoadingRegeneratedWebsite
-          regeneratedWebsiteRecord={regeneratedWebsiteRecord}
-          recordLoaded={recordLoaded}
-          setShowRegeneratedWebsite={setShowRegeneratedWebsite}
-          currentStep={currentStep ?? ""}
-          status={status}
-          ablyMarkedComplete={ablyMarkedComplete}
-        />
-      </div>
+      <FailedRegeneratedWebsite
+        errorReason={errorReason}
+        onTryAgain={handleTryAgain}
+        isRetrying={isRetrying}
+      />
     );
   }
+
+  return (
+    <div>
+      <LoadingRegeneratedWebsite
+        regeneratedWebsiteRecord={regeneratedWebsiteRecord}
+        recordLoaded={recordLoaded}
+        setShowRegeneratedWebsite={setShowFinalizedWebsite}
+        currentStep={currentStep ?? ""}
+        status={status}
+      />
+    </div>
+  );
 }
