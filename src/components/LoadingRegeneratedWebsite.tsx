@@ -19,7 +19,7 @@ export default function LoadingRegeneratedWebsite({
   status: RegenerationStatus | null;
   regeneratedWebsiteRecord: RegeneratedWebsite | null;
   recordLoaded: boolean;
-  ablyMarkedComplete: boolean;
+  ablyMarkedComplete?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const fadingRef = useRef(false);
