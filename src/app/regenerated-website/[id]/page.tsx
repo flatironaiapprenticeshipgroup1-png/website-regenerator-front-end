@@ -73,7 +73,6 @@ export default function RegeneratedWebsitePage() {
       .then((data: RegeneratedWebsite | null) => {
         if (data) {
           setRegeneratedWebsiteRecord(data);
-          // Only use DynamoDB state as fallback if Ably hasn't told us otherwise
           if (latestSeqRef.current === -1) {
             if (data.RegenerationStatus === "failed") {
               setPageState("failed");
@@ -101,7 +100,6 @@ export default function RegeneratedWebsitePage() {
           RegeneratedWebsiteId: id,
         }),
       });
-      // Reset to loading state on same page — backend continues sequence from current value
       latestSeqRef.current = -1;
       setStatus(null);
       setCurrentStep("");
@@ -117,7 +115,10 @@ export default function RegeneratedWebsitePage() {
 
   if (showFinalizedWebsite) {
     return (
-      <FinalizedRegeneratedWebsite id={id} RegeneratedWebsiteRecord={regeneratedWebsiteRecord!} />
+      <FinalizedRegeneratedWebsite
+        id={id}
+        RegeneratedWebsiteRecord={regeneratedWebsiteRecord!}
+      />
     );
   }
 
