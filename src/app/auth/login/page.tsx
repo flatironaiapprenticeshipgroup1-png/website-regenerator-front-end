@@ -11,18 +11,44 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
+  const [isSubmittingAnonymous, setIsSubmittingAnonymous] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setError(null);
+    setIsSubmittingPassword(true);
+
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+
+    setIsSubmittingPassword(false);
+
     if (error) {
       setError(error.message);
       return;
     }
+
+    router.push("/");
+  }
+
+  async function handleAnonymousSignIn() {
+    setError(null);
+    setIsSubmittingAnonymous(true);
+
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInAnonymously();
+
+    setIsSubmittingAnonymous(false);
+
+    if (error) {
+      setError(error.message);
+      return;
+    }
+
     router.push("/");
   }
 
@@ -64,8 +90,25 @@ export default function LoginPage() {
             />
           </div>
 
-          <button type="submit" className={styles.submit}>
-            Sign in
+          <button
+            type="submit"
+            className={styles.submit}
+            disabled={isSubmittingPassword || isSubmittingAnonymous}
+          >
+            {isSubmittingPassword ? "Signing in..." : "Sign in"}
+          </button>
+
+          <div className={styles.divider}>
+            <span>or</span>
+          </div>
+
+          <button
+            type="button"
+            className={styles.secondaryButton}
+            onClick={handleAnonymousSignIn}
+            disabled={isSubmittingPassword || isSubmittingAnonymous}
+          >
+            {isSubmittingAnonymous ? "Continuing as guest..." : "Continue as guest"}
           </button>
 
           <p className={styles.footer}>
