@@ -65,7 +65,9 @@ export default function LoginPage() {
           {error && <div className={styles.error}>{error}</div>}
 
           <div className={styles.field}>
-            <label className={styles.label} htmlFor="email">Email</label>
+            <label className={styles.label} htmlFor="email">
+              Email
+            </label>
             <input
               id="email"
               type="email"
@@ -78,7 +80,9 @@ export default function LoginPage() {
           </div>
 
           <div className={styles.field}>
-            <label className={styles.label} htmlFor="password">Password</label>
+            <label className={styles.label} htmlFor="password">
+              Password
+            </label>
             <input
               id="password"
               type="password"
@@ -108,11 +112,13 @@ export default function LoginPage() {
             onClick={handleAnonymousSignIn}
             disabled={isSubmittingPassword || isSubmittingAnonymous}
           >
-            {isSubmittingAnonymous ? "Continuing as guest..." : "Continue as guest"}
+            {isSubmittingAnonymous
+              ? "Continuing as guest..."
+              : "Continue as guest"}
           </button>
 
           <p className={styles.footer}>
-            Don&apos;t have an account?{" "}
+            Don&apos;t have an account? Want to see past regenerations?{" "}
             <Link href="/auth/register" className={styles.link}>
               Register
             </Link>
