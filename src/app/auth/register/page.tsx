@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import styles from "../login/login.module.css";
 
+const SITE_URL = process.env.NEXT_PUBLIC_DEPLOYED_URL ?? window.location.origin;
+
 export default function RegisterPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -19,7 +21,7 @@ export default function RegisterPage() {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: `${SITE_URL}/auth/callback`,
       },
     });
     if (error) {
