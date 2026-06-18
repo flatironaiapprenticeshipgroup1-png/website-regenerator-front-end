@@ -11,13 +11,14 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
-  const [isSubmittingAnonymous, setIsSubmittingAnonymous] = useState(false);
+  const [submitting, setSubmitting] = useState<"password" | "anonymous" | null>(
+    null,
+  );
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    setIsSubmittingPassword(true);
+    setSubmitting("password");
 
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithPassword({
@@ -25,7 +26,7 @@ export default function LoginPage() {
       password,
     });
 
-    setIsSubmittingPassword(false);
+    setSubmitting(null);
 
     if (error) {
       setError(error.message);
@@ -33,16 +34,17 @@ export default function LoginPage() {
     }
 
     router.push("/");
+    router.refresh();
   }
 
   async function handleAnonymousSignIn() {
     setError(null);
-    setIsSubmittingAnonymous(true);
+    setSubmitting("anonymous");
 
     const supabase = createClient();
     const { error } = await supabase.auth.signInAnonymously();
 
-    setIsSubmittingAnonymous(false);
+    setSubmitting(null);
 
     if (error) {
       setError(error.message);
@@ -50,6 +52,7 @@ export default function LoginPage() {
     }
 
     router.push("/");
+    router.refresh();
   }
 
   return (
@@ -97,9 +100,9 @@ export default function LoginPage() {
           <button
             type="submit"
             className={styles.submit}
-            disabled={isSubmittingPassword || isSubmittingAnonymous}
+            disabled={submitting !== null}
           >
-            {isSubmittingPassword ? "Signing in..." : "Sign in"}
+            {submitting === "password" ? "Signing in..." : "Sign in"}
           </button>
 
           <div className={styles.divider}>
@@ -110,9 +113,9 @@ export default function LoginPage() {
             type="button"
             className={styles.secondaryButton}
             onClick={handleAnonymousSignIn}
-            disabled={isSubmittingPassword || isSubmittingAnonymous}
+            disabled={submitting !== null}
           >
-            {isSubmittingAnonymous
+            {submitting === "anonymous"
               ? "Continuing as guest..."
               : "Continue as guest"}
           </button>
