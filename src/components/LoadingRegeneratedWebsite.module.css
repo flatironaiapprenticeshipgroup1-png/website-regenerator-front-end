@@ -99,43 +99,34 @@
   to   { opacity: 1; }
 }
 
-.step {
-  font-size: 1rem;
-  color: #909090;
-  letter-spacing: 0.04em;
-  animation: slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.dots {
-  display: flex;
-  gap: 8px;
-}
-
-.dot {
-  width: 6px;
+.progressTrack {
+  width: 280px;
   height: 6px;
-  border-radius: 50%;
-  background: #ffffff;
-  animation: bounce 1.4s ease-in-out infinite;
+  background: #111;
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid #2a2a2a;
 }
 
-.dot:nth-child(2) { animation-delay: 0.2s; }
-.dot:nth-child(3) { animation-delay: 0.4s; }
+.progressFill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #00b4d8, #0077b6, #00b4d8);
+  background-size: 200% 100%;
+  box-shadow: 0 0 8px #00b4d880, 0 0 20px #00b4d840;
+  animation: shimmer 2s linear infinite;
+  transition: width 0.4s ease-out;
+}
 
-@keyframes bounce {
-  0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
-  40% { opacity: 1; transform: scale(1.2); }
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.progressLabel {
+  font-size: 0.875rem;
+  color: #00b4d8;
+  letter-spacing: 0.08em;
 }
 
 .fadeOut {

@@ -2,57 +2,25 @@ import RegeneratedWebsite from "@/types/regeneratedWebsite";
 import { RegenerationStatus } from "@/types/status";
 import styles from "./LoadingRegeneratedWebsite.module.css";
 import CircuitBackground from "./CircuitBackground";
-import { useEffect, useRef, useState } from "react";
-
-const MIN_STEP_MS = 1500;
+import { useEffect, useRef } from "react";
 
 export default function LoadingRegeneratedWebsite({
-  currentStep,
   setShowRegeneratedWebsite,
   status,
   regeneratedWebsiteRecord,
   recordLoaded,
   ablyMarkedComplete,
+  progress,
 }: {
-  currentStep: string;
   setShowRegeneratedWebsite: React.Dispatch<React.SetStateAction<boolean>>;
   status: RegenerationStatus | null;
   regeneratedWebsiteRecord: RegeneratedWebsite | null;
   recordLoaded: boolean;
   ablyMarkedComplete?: boolean;
+  progress: number;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const fadingRef = useRef(false);
-
-  const [displayedStep, setDisplayedStep] = useState(currentStep);
-  const queueRef = useRef<string[]>([]);
-  const processingRef = useRef(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (!currentStep) return;
-    queueRef.current.push(currentStep);
-    if (processingRef.current) return;
-
-    function advance() {
-      if (queueRef.current.length === 0) {
-        processingRef.current = false;
-        return;
-      }
-      processingRef.current = true;
-      const next = queueRef.current.shift()!;
-      setDisplayedStep(next);
-      timerRef.current = setTimeout(advance, MIN_STEP_MS);
-    }
-
-    advance();
-  }, [currentStep]);
-
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, []);
 
   useEffect(() => {
     const isComplete =
@@ -89,14 +57,10 @@ export default function LoadingRegeneratedWebsite({
         ) : (
           <></>
         )}
-        <p key={displayedStep} className={styles.step}>
-          {displayedStep}
-        </p>
-        <div className={styles.dots}>
-          <div className={styles.dot} />
-          <div className={styles.dot} />
-          <div className={styles.dot} />
+        <div className={styles.progressTrack}>
+          <div className={styles.progressFill} style={{ width: `${progress}%` }} />
         </div>
+        <p className={styles.progressLabel}>{progress}%</p>
       </div>
     </div>
   );

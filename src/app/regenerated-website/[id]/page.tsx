@@ -15,14 +15,16 @@ export default function RegeneratedWebsitePage() {
   const [status, setStatus] = useState<RegenerationStatus | null>(null);
   const [pageState, setPageState] = useState<PageState>("loading");
   const [showFinalizedWebsite, setShowFinalizedWebsite] = useState(false);
-  const [currentStep, setCurrentStep] = useState<string | null>("");
   const [regeneratedWebsiteRecord, setRegeneratedWebsiteRecord] =
     useState<RegeneratedWebsite | null>(null);
   const [recordLoaded, setRecordLoaded] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   const ablyRef = useRef<Ably.Realtime | null>(null);
   const latestSeqRef = useRef<number>(-1);
+  const seenChunksRef = useRef<Set<number>>(new Set());
+  const totalChunksRef = useRef<number>(0);
 
   useEffect(() => {
     if (!id) return;
@@ -45,7 +47,19 @@ export default function RegeneratedWebsitePage() {
 
       latestSeqRef.current = payload.sequence ?? -1;
       setStatus(payload);
-      setCurrentStep(payload.message as string);
+
+      if (payload.phase === 'ai') {
+        setProgress(prev => Math.max(prev, 10));
+        const match = payload.message?.match(/(\d+)\/(\d+)/);
+        if (match) {
+          const chunkNum = parseInt(match[1]);
+          const total = parseInt(match[2]);
+          totalChunksRef.current = total;
+          seenChunksRef.current.add(chunkNum);
+          const pct = 10 + (seenChunksRef.current.size / total) * 90;
+          setProgress(Math.round(pct));
+        }
+      }
 
       if (payload.status === "failed") {
         setPageState("failed");
@@ -101,8 +115,10 @@ export default function RegeneratedWebsitePage() {
         }),
       });
       latestSeqRef.current = -1;
+      seenChunksRef.current = new Set();
+      totalChunksRef.current = 0;
+      setProgress(0);
       setStatus(null);
-      setCurrentStep("");
       setPageState("loading");
       setShowFinalizedWebsite(false);
     } finally {
@@ -138,8 +154,8 @@ export default function RegeneratedWebsitePage() {
         regeneratedWebsiteRecord={regeneratedWebsiteRecord}
         recordLoaded={recordLoaded}
         setShowRegeneratedWebsite={setShowFinalizedWebsite}
-        currentStep={currentStep ?? ""}
         status={status}
+        progress={progress}
       />
     </div>
   );
