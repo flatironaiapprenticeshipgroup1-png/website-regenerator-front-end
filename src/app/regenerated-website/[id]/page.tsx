@@ -15,14 +15,17 @@ export default function RegeneratedWebsitePage() {
   const [status, setStatus] = useState<RegenerationStatus | null>(null);
   const [pageState, setPageState] = useState<PageState>("loading");
   const [showFinalizedWebsite, setShowFinalizedWebsite] = useState(false);
-  const [currentStep, setCurrentStep] = useState<string | null>("");
   const [regeneratedWebsiteRecord, setRegeneratedWebsiteRecord] =
     useState<RegeneratedWebsite | null>(null);
   const [recordLoaded, setRecordLoaded] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   const ablyRef = useRef<Ably.Realtime | null>(null);
   const latestSeqRef = useRef<number>(-1);
+  const seenChunksRef = useRef<Set<number>>(new Set());
+  const totalChunksRef = useRef<number>(0);
+  const inAiPhaseRef = useRef(false);
 
   useEffect(() => {
     if (!id) return;
@@ -45,7 +48,33 @@ export default function RegeneratedWebsitePage() {
 
       latestSeqRef.current = payload.sequence ?? -1;
       setStatus(payload);
-      setCurrentStep(payload.message as string);
+
+      const chunkMatch = payload.message?.match(/(\d+) of (\d+)/i);
+
+      if (payload.phase === 'crawler' && chunkMatch) {
+        const chunkNum = parseInt(chunkMatch[1]);
+        const total = parseInt(chunkMatch[2]);
+        totalChunksRef.current = total;
+        seenChunksRef.current.add(chunkNum);
+        setProgress(Math.round((seenChunksRef.current.size / total) * 10));
+      }
+
+      if (payload.phase === 'ai') {
+        if (!inAiPhaseRef.current) {
+          inAiPhaseRef.current = true;
+          seenChunksRef.current = new Set();
+          totalChunksRef.current = 0;
+          setProgress(10);
+        }
+        if (chunkMatch) {
+          const chunkNum = parseInt(chunkMatch[1]);
+          const total = parseInt(chunkMatch[2]);
+          totalChunksRef.current = total;
+          seenChunksRef.current.add(chunkNum);
+          const pct = 10 + (seenChunksRef.current.size / total) * 90;
+          setProgress(Math.round(pct));
+        }
+      }
 
       if (payload.status === "failed") {
         setPageState("failed");
@@ -101,8 +130,11 @@ export default function RegeneratedWebsitePage() {
         }),
       });
       latestSeqRef.current = -1;
+      seenChunksRef.current = new Set();
+      totalChunksRef.current = 0;
+      inAiPhaseRef.current = false;
+      setProgress(0);
       setStatus(null);
-      setCurrentStep("");
       setPageState("loading");
       setShowFinalizedWebsite(false);
     } finally {
@@ -138,8 +170,8 @@ export default function RegeneratedWebsitePage() {
         regeneratedWebsiteRecord={regeneratedWebsiteRecord}
         recordLoaded={recordLoaded}
         setShowRegeneratedWebsite={setShowFinalizedWebsite}
-        currentStep={currentStep ?? ""}
         status={status}
+        progress={progress}
       />
     </div>
   );
