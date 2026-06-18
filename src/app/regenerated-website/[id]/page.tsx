@@ -25,6 +25,7 @@ export default function RegeneratedWebsitePage() {
   const latestSeqRef = useRef<number>(-1);
   const seenChunksRef = useRef<Set<number>>(new Set());
   const totalChunksRef = useRef<number>(0);
+  const inAiPhaseRef = useRef(false);
 
   useEffect(() => {
     if (!id) return;
@@ -48,12 +49,26 @@ export default function RegeneratedWebsitePage() {
       latestSeqRef.current = payload.sequence ?? -1;
       setStatus(payload);
 
+      const chunkMatch = payload.message?.match(/(\d+) of (\d+)/i);
+
+      if (payload.phase === 'crawler' && chunkMatch) {
+        const chunkNum = parseInt(chunkMatch[1]);
+        const total = parseInt(chunkMatch[2]);
+        totalChunksRef.current = total;
+        seenChunksRef.current.add(chunkNum);
+        setProgress(Math.round((seenChunksRef.current.size / total) * 10));
+      }
+
       if (payload.phase === 'ai') {
-        setProgress(prev => Math.max(prev, 10));
-        const match = payload.message?.match(/(\d+)\/(\d+)/);
-        if (match) {
-          const chunkNum = parseInt(match[1]);
-          const total = parseInt(match[2]);
+        if (!inAiPhaseRef.current) {
+          inAiPhaseRef.current = true;
+          seenChunksRef.current = new Set();
+          totalChunksRef.current = 0;
+          setProgress(10);
+        }
+        if (chunkMatch) {
+          const chunkNum = parseInt(chunkMatch[1]);
+          const total = parseInt(chunkMatch[2]);
           totalChunksRef.current = total;
           seenChunksRef.current.add(chunkNum);
           const pct = 10 + (seenChunksRef.current.size / total) * 90;
@@ -117,6 +132,7 @@ export default function RegeneratedWebsitePage() {
       latestSeqRef.current = -1;
       seenChunksRef.current = new Set();
       totalChunksRef.current = 0;
+      inAiPhaseRef.current = false;
       setProgress(0);
       setStatus(null);
       setPageState("loading");
