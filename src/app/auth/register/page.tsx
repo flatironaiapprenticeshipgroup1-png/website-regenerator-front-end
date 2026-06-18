@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import styles from "../login/login.module.css";
 
+const SITE_URL = process.env.NEXT_PUBLIC_DEPLOYED_URL ?? window.location.origin;
+
 export default function RegisterPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -18,6 +20,9 @@ export default function RegisterPage() {
     const { error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: `${SITE_URL}/auth/callback`,
+      },
     });
     if (error) {
       setError(error.message);
@@ -39,7 +44,9 @@ export default function RegisterPage() {
           {error && <div className={styles.error}>{error}</div>}
 
           <div className={styles.field}>
-            <label className={styles.label} htmlFor="email">Email</label>
+            <label className={styles.label} htmlFor="email">
+              Email
+            </label>
             <input
               id="email"
               type="email"
@@ -52,7 +59,9 @@ export default function RegisterPage() {
           </div>
 
           <div className={styles.field}>
-            <label className={styles.label} htmlFor="password">Password</label>
+            <label className={styles.label} htmlFor="password">
+              Password
+            </label>
             <input
               id="password"
               type="password"
