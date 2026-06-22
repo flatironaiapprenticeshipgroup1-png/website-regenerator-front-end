@@ -34,7 +34,9 @@ export default async function RootLayout({
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>
         {children}
+        <div className="bottom-nav-trigger" />
         <nav
+          className="bottom-nav"
           style={{
             position: "fixed",
             bottom: 0,
