@@ -20,6 +20,7 @@ export default function RegeneratedWebsitePage() {
   const [recordLoaded, setRecordLoaded] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [currentStep, setCurrentStep] = useState<string>("");
 
   const ablyRef = useRef<Ably.Realtime | null>(null);
   const latestSeqRef = useRef<number>(-1);
@@ -50,6 +51,10 @@ export default function RegeneratedWebsitePage() {
       setStatus(payload);
 
       const chunkMatch = payload.message?.match(/(\d+) of (\d+)/i);
+
+      if (!chunkMatch && payload.message) {
+        setCurrentStep(payload.message as string);
+      }
 
       if (payload.phase === 'crawler' && chunkMatch) {
         const chunkNum = parseInt(chunkMatch[1]);
@@ -134,6 +139,7 @@ export default function RegeneratedWebsitePage() {
       totalChunksRef.current = 0;
       inAiPhaseRef.current = false;
       setProgress(0);
+      setCurrentStep("");
       setStatus(null);
       setPageState("loading");
       setShowFinalizedWebsite(false);
@@ -172,6 +178,7 @@ export default function RegeneratedWebsitePage() {
         setShowRegeneratedWebsite={setShowFinalizedWebsite}
         status={status}
         progress={progress}
+        currentStep={currentStep}
       />
     </div>
   );

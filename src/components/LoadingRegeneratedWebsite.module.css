@@ -99,6 +99,18 @@
   to   { opacity: 1; }
 }
 
+.step {
+  font-size: 0.95rem;
+  color: #cccccc;
+  letter-spacing: 0.04em;
+  animation: slideIn 0.4s ease-out both;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 .progressTrack {
   width: 280px;
   height: 6px;
