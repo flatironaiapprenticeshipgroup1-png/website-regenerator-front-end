@@ -12,6 +12,8 @@ export default function LoadingRegeneratedWebsite({
   ablyMarkedComplete,
   progress,
   currentStep,
+  htmlChunkProgress,
+  cssChunkProgress,
 }: {
   setShowRegeneratedWebsite: React.Dispatch<React.SetStateAction<boolean>>;
   status: RegenerationStatus | null;
@@ -20,6 +22,8 @@ export default function LoadingRegeneratedWebsite({
   ablyMarkedComplete?: boolean;
   progress: number;
   currentStep: string;
+  htmlChunkProgress?: number | null;
+  cssChunkProgress?: number | null;
 }) {
   const MIN_STEP_MS = 1500;
   const [displayedStep, setDisplayedStep] = useState(currentStep);
@@ -82,6 +86,36 @@ export default function LoadingRegeneratedWebsite({
         )}
         {displayedStep && (
           <p key={displayedStep} className={styles.step}>{displayedStep}</p>
+        )}
+        {htmlChunkProgress !== null && htmlChunkProgress !== undefined && (
+          <div key="html-chunk-bar" className={styles.subProgressGroup}>
+            <p className={styles.subProgressLabel}>
+              Html Regeneration
+            </p>
+            <div className={styles.subProgressTrack}>
+              <div
+                className={styles.subProgressFill}
+                style={{ width: `${htmlChunkProgress}%` }}
+              />
+            </div>
+            <p className={styles.subProgressLabel}>{htmlChunkProgress}%</p>
+          </div>
+        )}
+        {cssChunkProgress !== null && cssChunkProgress !== undefined && (
+          <div key="css-chunk-bar" className={styles.subProgressGroup}>
+            <p className={styles.subProgressLabel}>
+              Css Regeneration
+            </p>
+            <div className={styles.subProgressTrack}>
+              <div
+                className={styles.subProgressFill}
+                style={{ width: `${cssChunkProgress}%` }}
+              />
+            </div>
+            <p className={styles.subProgressLabel}>
+              {cssChunkProgress}%
+            </p>
+          </div>
         )}
         <div className={styles.progressTrack}>
           <div className={styles.progressFill} style={{ width: `${progress}%` }} />
