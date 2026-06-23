@@ -40,10 +40,21 @@ export default function FinalizedRegeneratedWebsite({
           </Link>
 
           {RegeneratedWebsiteRecord && (
-            <span className={styles.urlBadge}>
+            <a
+              href={
+                /^https?:\/\//i.test(
+                  RegeneratedWebsiteRecord.RegeneratedWebsiteUrl
+                )
+                  ? RegeneratedWebsiteRecord.RegeneratedWebsiteUrl
+                  : `https://${RegeneratedWebsiteRecord.RegeneratedWebsiteUrl}`
+              }
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.urlBadge}
+            >
               <span className={styles.urlBadgeDot} />
               {RegeneratedWebsiteRecord.RegeneratedWebsiteUrl}
-            </span>
+            </a>
           )}
         </nav>
       </div>
