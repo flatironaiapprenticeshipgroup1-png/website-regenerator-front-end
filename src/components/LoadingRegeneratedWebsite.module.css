@@ -111,6 +111,39 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+.subProgressGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  animation: slideIn 0.4s ease-out both;
+}
+
+.subProgressLabel {
+  font-size: 0.75rem;
+  color: #ffffff;
+  letter-spacing: 0.06em;
+}
+
+.subProgressTrack {
+  width: 280px;
+  height: 6px;
+  background: #111;
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid #2a2a2a;
+}
+
+.subProgressFill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #ffffff, #cccccc, #ffffff);
+  background-size: 200% 100%;
+  box-shadow: 0 0 8px #ffffff80;
+  animation: shimmer 2s linear infinite;
+  transition: width 0.3s ease-out;
+}
+
 .progressTrack {
   width: 280px;
   height: 6px;

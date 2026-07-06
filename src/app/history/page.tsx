@@ -8,10 +8,13 @@ export default async function HistoryPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: regenerations } = await supabase
-    .from("regenerations")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const { data: regenerations } = user
+    ? await supabase
+        .from("regenerations")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+    : { data: null };
 
   return (
     <div className={styles.page}>

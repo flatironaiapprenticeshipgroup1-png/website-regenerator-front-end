@@ -28,6 +28,13 @@
   transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Mobile/touch devices have no hover state, so keep the nav pinned open */
+@media (hover: none) {
+  .navWrapper {
+    max-height: 80px;
+  }
+}
+
 /* ── Nav bar ──────────────────────────────────────────────── */
 .nav {
   display: flex;
@@ -49,6 +56,12 @@
 .navWrapper:hover .nav {
   opacity: 1;
   transition: opacity 0.2s ease 0.1s;
+}
+
+@media (hover: none) {
+  .nav {
+    opacity: 1;
+  }
 }
 
 /* ── Back link ────────────────────────────────────────────── */
