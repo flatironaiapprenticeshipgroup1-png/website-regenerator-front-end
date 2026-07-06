@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import LogoutButton from "@/components/LogoutButton";
 
 const linkStyle: React.CSSProperties = {
@@ -22,12 +23,16 @@ export default function BottomNav({
   user: boolean;
 }) {
   const pathname = usePathname();
+  const [visible, setVisible] = useState(false);
 
   return (
-    <>
-      <div className="bottom-nav-trigger" />
+    <div
+      className="bottom-nav-hitzone"
+      onMouseEnter={() => setVisible(true)}
+      onMouseLeave={() => setVisible(false)}
+    >
       <nav
-        className="bottom-nav"
+        className={`bottom-nav${visible ? " bottom-nav--visible" : ""}`}
         style={{
           position: "fixed",
           bottom: 0,
@@ -64,6 +69,6 @@ export default function BottomNav({
           )
         )}
       </nav>
-    </>
+    </div>
   );
 }

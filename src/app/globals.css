@@ -39,12 +39,12 @@ html {
   color-scheme: dark;
 }
 
-.bottom-nav-trigger {
+.bottom-nav-hitzone {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 24px;
+  height: 64px;
   z-index: 9;
 }
 
@@ -53,13 +53,17 @@ html {
   transition: transform 0.2s ease;
 }
 
-.bottom-nav-trigger:hover ~ .bottom-nav,
-.bottom-nav:hover {
+.bottom-nav--visible,
+.bottom-nav:focus-within {
   transform: translateY(0);
 }
 
 @media (hover: none) and (pointer: coarse) {
   .bottom-nav {
     transform: translateY(0);
+  }
+
+  body.iframe-viewer-active .bottom-nav {
+    transform: translateY(100%);
   }
 }

@@ -6,10 +6,12 @@ export default function FailedRegeneratedWebsite({
   errorReason,
   onTryAgain,
   isRetrying,
+  retryError,
 }: {
   errorReason: string | null;
   onTryAgain: () => void;
   isRetrying: boolean;
+  retryError?: string | null;
 }) {
   return (
     <div className={styles.container}>
@@ -24,6 +26,9 @@ export default function FailedRegeneratedWebsite({
         <h2 className={styles.heading}>Regeneration Failed</h2>
         {errorReason && (
           <p className={styles.reason}>{errorReason}</p>
+        )}
+        {retryError && (
+          <p className={styles.reason}>{retryError}</p>
         )}
         <button
           className={styles.button}

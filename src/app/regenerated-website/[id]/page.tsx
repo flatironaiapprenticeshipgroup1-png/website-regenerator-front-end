@@ -45,13 +45,18 @@ export default function RegeneratedWebsitePage() {
   const [htmlChunkProgress, setHtmlChunkProgress] = useState<number | null>(null);
   const [cssChunkProgress, setCssChunkProgress] = useState<number | null>(null);
 
+  const [retryError, setRetryError] = useState<string | null>(null);
+
   const ablyRef = useRef<Ably.Realtime | null>(null);
   const latestSeqRef = useRef<number>(-1);
   const seenHtmlChunksRef = useRef<Set<number>>(new Set());
   const seenCssChunksRef = useRef<Set<number>>(new Set());
+  const maxProgressRef = useRef<number>(0);
 
   useEffect(() => {
     if (!id) return;
+
+    let cancelled = false;
 
     const client = new Ably.Realtime({
       authUrl: "/api/ably-auth",
@@ -85,7 +90,7 @@ export default function RegeneratedWebsitePage() {
             const chunkNum = parseInt(chunkMatch[1]);
             const total = parseInt(chunkMatch[2]);
             seenRef.current.add(chunkNum);
-            stepFraction = seenRef.current.size / total;
+            stepFraction = total > 0 ? Math.min(seenRef.current.size / total, 1) : 0;
           } else {
             stepFraction = 0;
           }
@@ -107,7 +112,13 @@ export default function RegeneratedWebsitePage() {
           if (stepIndex > CSS_CHUNK_STEP_INDEX) setCssChunkProgress(null);
         }
 
-        setProgress(Math.round(((stepIndex + stepFraction) / STEP_ORDER.length) * 100));
+        // Never let displayed progress move backwards — a step's fraction can
+        // legitimately regress mid-step (e.g. a chunk-phase event arrives
+        // without an "N of M" in its message), but the progress bar shouldn't.
+        const nextProgress = Math.round(((stepIndex + stepFraction) / STEP_ORDER.length) * 100);
+        const clampedProgress = Math.max(nextProgress, maxProgressRef.current);
+        maxProgressRef.current = clampedProgress;
+        setProgress(clampedProgress);
       }
 
       if (payload.status === "failed") {
@@ -123,14 +134,31 @@ export default function RegeneratedWebsitePage() {
     // In dev, React Strict Mode mounts this effect, cleans it up, then mounts
     // it again — if client.close() (below, in the cleanup) fires while this
     // first subscribe is still attaching, Ably rejects the pending promise
-    // with a "Connection closed" error. Left unhandled, that surfaces as an
-    // unhandled-rejection runtime error in the Next.js dev overlay, even
-    // though nothing is actually broken (the remounted effect creates a new
-    // client and subscribes again). Swallow it here since it's expected noise
-    // from the unmount/remount race, not a real failure.
-    channel.subscribe("regeneration-status", handleStatusMessage).catch(() => {});
+    // with a "Connection closed" error. That rejection is expected noise from
+    // the unmount/remount race, not a real failure — the `cancelled` flag
+    // (set in the cleanup below) tells us whether that's what happened. Any
+    // rejection that arrives while the effect is still mounted is a genuine
+    // failure (auth, rate limit, network) and should surface to the user
+    // instead of leaving them on an infinite spinner.
+    channel.subscribe("regeneration-status", handleStatusMessage).catch((err) => {
+      if (cancelled) return;
+      console.error("Ably subscribe failed:", err);
+      setPageState("failed");
+      setStatus((prev) =>
+        prev ?? {
+          websiteId: id,
+          phase: null,
+          step: null,
+          status: "failed",
+          sequence: null,
+          resultUrl: null,
+          error: "Lost connection for live updates. Please refresh the page.",
+        }
+      );
+    });
 
     return () => {
+      cancelled = true;
       channel.unsubscribe("regeneration-status", handleStatusMessage);
       client.close();
       ablyRef.current = null;
@@ -162,8 +190,9 @@ export default function RegeneratedWebsitePage() {
     if (!record) return;
 
     setIsRetrying(true);
+    setRetryError(null);
     try {
-      await fetch("/api/regenerate-website", {
+      const res = await fetch("/api/regenerate-website", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -172,16 +201,26 @@ export default function RegeneratedWebsitePage() {
           RegeneratedWebsiteId: id,
         }),
       });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setRetryError(data?.error || "Failed to start retry. Please try again.");
+        return;
+      }
+
       latestSeqRef.current = -1;
       seenHtmlChunksRef.current = new Set();
       seenCssChunksRef.current = new Set();
       setHtmlChunkProgress(null);
       setCssChunkProgress(null);
       setProgress(0);
+      maxProgressRef.current = 0;
       setCurrentStep("");
       setStatus(null);
       setPageState("loading");
       setShowFinalizedWebsite(false);
+    } catch {
+      setRetryError("Network error — please try again");
     } finally {
       setIsRetrying(false);
     }
@@ -205,6 +244,7 @@ export default function RegeneratedWebsitePage() {
         errorReason={errorReason}
         onTryAgain={handleTryAgain}
         isRetrying={isRetrying}
+        retryError={retryError}
       />
     );
   }

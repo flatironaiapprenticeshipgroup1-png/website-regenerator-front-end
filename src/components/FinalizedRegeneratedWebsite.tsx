@@ -1,6 +1,7 @@
 "use client";
 import RegeneratedWebsite from "@/types/regeneratedWebsite";
 import Link from "next/link";
+import { useEffect } from "react";
 import styles from "./FinalizedRegeneratedWebsite.module.css";
 
 export default function FinalizedRegeneratedWebsite({
@@ -10,6 +11,11 @@ export default function FinalizedRegeneratedWebsite({
   id: string;
   RegeneratedWebsiteRecord: RegeneratedWebsite;
 }) {
+  useEffect(() => {
+    document.body.classList.add("iframe-viewer-active");
+    return () => document.body.classList.remove("iframe-viewer-active");
+  }, []);
+
   return (
     <div className={styles.wrapper}>
       {/*
