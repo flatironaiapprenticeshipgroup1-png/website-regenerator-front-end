@@ -24,7 +24,6 @@ export default function LoadingRegeneratedWebsite({
   ablyMarkedComplete,
   progress,
   currentStep,
-  htmlChunkProgress,
   cssChunkProgress,
 }: {
   setShowRegeneratedWebsite: React.Dispatch<React.SetStateAction<boolean>>;
@@ -34,7 +33,6 @@ export default function LoadingRegeneratedWebsite({
   ablyMarkedComplete?: boolean;
   progress: number;
   currentStep: string;
-  htmlChunkProgress?: number | null;
   cssChunkProgress?: number | null;
 }) {
   const MIN_STEP_MS = 1500;
@@ -96,9 +94,6 @@ export default function LoadingRegeneratedWebsite({
             <h2 className={styles.title}>Regenerating Website</h2>
             {displayedStep && (
               <p key={displayedStep} className={styles.step}>{displayedStep}</p>
-            )}
-            {htmlChunkProgress !== null && htmlChunkProgress !== undefined && (
-              <SubProgressBar key="html-chunk-bar" label="Html Regeneration" value={htmlChunkProgress} />
             )}
             {cssChunkProgress !== null && cssChunkProgress !== undefined && (
               <SubProgressBar key="css-chunk-bar" label="Css Regeneration" value={cssChunkProgress} />
