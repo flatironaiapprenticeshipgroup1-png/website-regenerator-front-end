@@ -9,7 +9,10 @@ function SubProgressBar({ label, value }: { label: string; value: number }) {
     <div className={styles.subProgressGroup}>
       <p className={styles.subProgressLabel}>{label}</p>
       <div className={styles.subProgressTrack}>
-        <div className={styles.subProgressFill} style={{ width: `${value}%` }} />
+        <div
+          className={styles.subProgressFill}
+          style={{ width: `${value}%` }}
+        />
       </div>
       <p className={styles.subProgressLabel}>{value}%</p>
     </div>
@@ -24,8 +27,7 @@ export default function LoadingRegeneratedWebsite({
   ablyMarkedComplete,
   progress,
   currentStep,
-  htmlChunkProgress,
-  cssChunkProgress,
+  combinedChunkProgress,
 }: {
   setShowRegeneratedWebsite: React.Dispatch<React.SetStateAction<boolean>>;
   status: RegenerationStatus | null;
@@ -34,8 +36,7 @@ export default function LoadingRegeneratedWebsite({
   ablyMarkedComplete?: boolean;
   progress: number;
   currentStep: string;
-  htmlChunkProgress?: number | null;
-  cssChunkProgress?: number | null;
+  combinedChunkProgress?: number | null;
 }) {
   const MIN_STEP_MS = 1500;
   const [displayedStep, setDisplayedStep] = useState(currentStep);
@@ -49,14 +50,22 @@ export default function LoadingRegeneratedWebsite({
 
     const drain = () => {
       const next = queueRef.current.shift();
-      if (!next) { timerRef.current = null; return; }
+      if (!next) {
+        timerRef.current = null;
+        return;
+      }
       setDisplayedStep(next);
       timerRef.current = setTimeout(drain, MIN_STEP_MS);
     };
     drain();
-  }, [currentStep]);
+  }, [currentStep, displayedStep]);
 
-  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    },
+    [],
+  );
 
   const containerRef = useRef<HTMLDivElement>(null);
   const fadingRef = useRef(false);
@@ -91,24 +100,30 @@ export default function LoadingRegeneratedWebsite({
 
       <div className={styles.textGroup}>
         {recordLoaded &&
-          regeneratedWebsiteRecord?.RegenerationStatus !== "completed" ? (
+        regeneratedWebsiteRecord?.RegenerationStatus !== "completed" ? (
           <>
             <h2 className={styles.title}>Regenerating Website</h2>
             {displayedStep && (
-              <p key={displayedStep} className={styles.step}>{displayedStep}</p>
+              <p key={displayedStep} className={styles.step}>
+                {displayedStep}
+              </p>
             )}
-            {htmlChunkProgress !== null && htmlChunkProgress !== undefined && (
-              <SubProgressBar key="html-chunk-bar" label="Html Regeneration" value={htmlChunkProgress} />
-            )}
-            {cssChunkProgress !== null && cssChunkProgress !== undefined && (
-              <SubProgressBar key="css-chunk-bar" label="Css Regeneration" value={cssChunkProgress} />
-            )}
+            {combinedChunkProgress !== null &&
+              combinedChunkProgress !== undefined && (
+                <SubProgressBar
+                  key="combined-chunk-bar"
+                  label="HTML + CSS Regeneration"
+                  value={combinedChunkProgress}
+                />
+              )}
             <div className={styles.progressTrack}>
-              <div className={styles.progressFill} style={{ width: `${progress}%` }} />
+              <div
+                className={styles.progressFill}
+                style={{ width: `${progress}%` }}
+              />
             </div>
             <p className={styles.progressLabel}>{progress}%</p>
           </>
-
         ) : (
           <></>
         )}
