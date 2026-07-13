@@ -72,11 +72,6 @@ export default function RegeneratedWebsitePage() {
   const ablyRef = useRef<Ably.Realtime | null>(null);
   const latestSeqRef = useRef<number>(-1);
   const seenCombinedChunksRef = useRef<Set<number>>(new Set());
-  // ponytail: normalizeStep collapses legacy two-phase step names
-  // (regenerating_html_chunks_completed / regenerating_css_chunks_completed)
-  // into one COMBINED_CHUNK_STEP. Track the raw step name that fed the set so
-  // a phase switch clears stale chunk numbers instead of merging two distinct
-  // chunk sequences. Drop once the backend only ever emits regenerating_combined.
   const lastChunkStepRef = useRef<string | null>(null);
   const maxProgressRef = useRef<number>(0);
 
