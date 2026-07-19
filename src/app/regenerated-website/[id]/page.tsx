@@ -17,13 +17,13 @@ const STEP_ORDER = [
   "extracting_images",
   "queueing_ai",
   "chunking",
-  "regenerating_combined",
-  "regenerating_combined_chunks_completed",
+  "regenerating_html_and_styling",
+  "regenerating_html_and_styling_chunks_completed",
   "Finalizing",
 ];
 
-const COMBINED_REGEN_STEP = "regenerating_combined";
-const COMBINED_CHUNK_STEP = "regenerating_combined_chunks_completed";
+const COMBINED_REGEN_STEP = "regenerating_html_and_styling";
+const COMBINED_CHUNK_STEP = "regenerating_html_and_styling_chunks_completed";
 const COMBINED_CHUNK_STEP_INDEX = STEP_ORDER.indexOf(COMBINED_CHUNK_STEP);
 
 function normalizeStep(step: string | null): string {
@@ -34,7 +34,7 @@ function normalizeStep(step: string | null): string {
     step === "regenerating_css" ||
     step === "regenerating_website" ||
     step === "regenerating_html_css" ||
-    step === "regenerating_combined"
+    step === "regenerating_html_and_styling"
   ) {
     return COMBINED_REGEN_STEP;
   }
@@ -44,7 +44,7 @@ function normalizeStep(step: string | null): string {
     step === "regenerating_css_chunks_completed" ||
     step === "regenerating_website_chunks_completed" ||
     step === "regenerating_html_css_chunks_completed" ||
-    step === "regenerating_combined_chunks_completed"
+    step === "regenerating_html_and_styling_chunks_completed"
   ) {
     return COMBINED_CHUNK_STEP;
   }
