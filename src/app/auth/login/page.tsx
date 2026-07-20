@@ -12,9 +12,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState<"password" | "anonymous" | null>(
-    null,
-  );
+  const [submitting, setSubmitting] = useState<"password" | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -26,24 +24,6 @@ export default function LoginPage() {
       email,
       password,
     });
-
-    setSubmitting(null);
-
-    if (error) {
-      setError(error.message);
-      return;
-    }
-
-    router.push("/");
-    router.refresh();
-  }
-
-  async function handleAnonymousSignIn() {
-    setError(null);
-    setSubmitting("anonymous");
-
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInAnonymously();
 
     setSubmitting(null);
 
@@ -106,21 +86,6 @@ export default function LoginPage() {
               disabled={submitting !== null}
             >
               {submitting === "password" ? "Signing in..." : "Sign in"}
-            </button>
-
-            <div className={styles.divider}>
-              <span>or</span>
-            </div>
-
-            <button
-              type="button"
-              className={styles.secondaryButton}
-              onClick={handleAnonymousSignIn}
-              disabled={submitting !== null}
-            >
-              {submitting === "anonymous"
-                ? "Continuing as guest..."
-                : "Continue as guest"}
             </button>
 
             <p className={styles.footer}>

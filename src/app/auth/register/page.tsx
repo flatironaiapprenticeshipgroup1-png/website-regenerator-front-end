@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import styles from "../login/login.module.css";
+import CircuitBackground from "@/components/CircuitBackground";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -14,20 +15,29 @@ export default function RegisterPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setError(null);
+
     const supabase = createClient();
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const { error } = user?.is_anonymous
+      ? await supabase.auth.updateUser({ email, password })
+      : await supabase.auth.signUp({ email, password });
+
     if (error) {
       setError(error.message);
     } else {
       router.push("/");
+      router.refresh();
     }
   }
 
   return (
-    <div className={styles.page}>
+  <>
+  <CircuitBackground />
+  <div className={styles.page}>
       <div className={styles.card}>
         <div className={styles.header}>
           <div className={styles.badge}>Website Regenerator</div>
@@ -81,5 +91,7 @@ export default function RegisterPage() {
         </form>
       </div>
     </div>
+  </>
+    
   );
 }
