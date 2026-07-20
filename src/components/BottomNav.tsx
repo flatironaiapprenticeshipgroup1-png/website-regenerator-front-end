@@ -74,7 +74,7 @@ export default function BottomNav({
         ) : (
           pathname !== "/auth/login" && (
             <Link href="/auth/login" style={linkStyle}>
-              Log in
+              Sign in
             </Link>
           )
         )}

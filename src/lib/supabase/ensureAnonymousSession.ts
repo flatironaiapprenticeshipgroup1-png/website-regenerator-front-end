@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "./client";
+import { clearSignedOut } from "./signedOutFlag";
 
 export async function ensureAnonymousSession() {
   const supabase = createClient();
@@ -12,5 +13,6 @@ export async function ensureAnonymousSession() {
 
   const { data, error } = await supabase.auth.signInAnonymously();
   if (error) throw error;
+  clearSignedOut();
   return data.session;
 }

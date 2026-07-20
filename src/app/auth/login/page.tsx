@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import CircuitBackground from "@/components/CircuitBackground";
+import { clearSignedOut } from "@/lib/supabase/signedOutFlag";
 import styles from "./login.module.css";
 
 export default function LoginPage() {
@@ -32,6 +33,7 @@ export default function LoginPage() {
       return;
     }
 
+    clearSignedOut();
     router.push("/");
     router.refresh();
   }

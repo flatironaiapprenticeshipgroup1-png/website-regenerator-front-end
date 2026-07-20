@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import styles from "../login/login.module.css";
 import CircuitBackground from "@/components/CircuitBackground";
+import { clearSignedOut } from "@/lib/supabase/signedOutFlag";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -29,6 +30,7 @@ export default function RegisterPage() {
     if (error) {
       setError(error.message);
     } else {
+      clearSignedOut();
       router.push("/");
       router.refresh();
     }

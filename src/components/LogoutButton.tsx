@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { markSignedOut } from "@/lib/supabase/signedOutFlag";
 
 export default function LogoutButton() {
   const router = useRouter();
@@ -9,6 +10,7 @@ export default function LogoutButton() {
   const handleLogout = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
+    markSignedOut();
     router.push("/auth/login");
     router.refresh();
   };
