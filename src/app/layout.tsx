@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import BottomNav from "@/components/BottomNav";
+import AuthBootstrap from "@/components/AuthBootstrap";
 import { createClient } from "@/lib/supabase/server";
 
 const geistSans = Geist({
@@ -33,7 +34,8 @@ export default async function RootLayout({
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>
         {children}
-        <BottomNav user={!!user} />
+        <AuthBootstrap />
+        <BottomNav user={!!user} isAnonymous={!!user?.is_anonymous} />
       </body>
     </html>
   );

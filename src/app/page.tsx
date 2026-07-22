@@ -4,6 +4,7 @@ import styles from "./page.module.css";
 import CircuitBackground from "../components/CircuitBackground";
 import { useState } from 'react';
 import { useRouter } from "next/navigation";
+import { ensureAnonymousSession } from "@/lib/supabase/ensureAnonymousSession";
 
 export default function Home() {
   const [url, setUrl] = useState("");
@@ -20,6 +21,8 @@ export default function Home() {
     setErrorMsg(null);
 
     try {
+      await ensureAnonymousSession();
+
       const res = await fetch("/api/regenerate-website", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

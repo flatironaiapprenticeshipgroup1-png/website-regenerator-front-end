@@ -7,6 +7,7 @@ import RegeneratedWebsite from "@/types/regeneratedWebsite";
 import LoadingRegeneratedWebsite from "@/components/LoadingRegeneratedWebsite";
 import FinalizedRegeneratedWebsite from "@/components/FinalizedRegeneratedWebsite";
 import FailedRegeneratedWebsite from "@/components/FailedRegeneratedWebsite";
+import { ensureAnonymousSession } from "@/lib/supabase/ensureAnonymousSession";
 
 type PageState = "loading" | "failed" | "completed";
 
@@ -223,6 +224,8 @@ export default function RegeneratedWebsitePage() {
     setIsRetrying(true);
     setRetryError(null);
     try {
+      await ensureAnonymousSession();
+
       const res = await fetch("/api/regenerate-website", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

@@ -19,8 +19,10 @@ const linkStyle: React.CSSProperties = {
 
 export default function BottomNav({
   user,
+  isAnonymous,
 }: {
   user: boolean;
+  isAnonymous: boolean;
 }) {
   const pathname = usePathname();
   const [visible, setVisible] = useState(false);
@@ -60,11 +62,19 @@ export default function BottomNav({
           </Link>
         )}
         {user ? (
-          <LogoutButton />
+          isAnonymous ? (
+            pathname !== "/auth/register" && (
+              <Link href="/auth/register" style={linkStyle}>
+                Create Account
+              </Link>
+            )
+          ) : (
+            <LogoutButton />
+          )
         ) : (
           pathname !== "/auth/login" && (
             <Link href="/auth/login" style={linkStyle}>
-              Log in
+              Sign in
             </Link>
           )
         )}
