@@ -16,42 +16,21 @@ const STEP_ORDER = [
   "crawling_html",
   "extracting_css",
   "extracting_images",
+  "regenerating_html",
+  "regenerating_html_chunks_completed",
   "queueing_ai",
   "chunking",
-  "regenerating_html_and_styling",
-  "regenerating_html_and_styling_chunks_completed",
+  "regenerating_css",
+  "regenerating_css_chunks_completed",
   "Finalizing",
 ];
 
-const COMBINED_REGEN_STEP = "regenerating_html_and_styling";
-const COMBINED_CHUNK_STEP = "regenerating_html_and_styling_chunks_completed";
-const COMBINED_CHUNK_STEP_INDEX = STEP_ORDER.indexOf(COMBINED_CHUNK_STEP);
-
-function normalizeStep(step: string | null): string {
-  if (!step) return "";
-
-  if (
-    step === "regenerating_html" ||
-    step === "regenerating_css" ||
-    step === "regenerating_website" ||
-    step === "regenerating_html_css" ||
-    step === "regenerating_html_and_styling"
-  ) {
-    return COMBINED_REGEN_STEP;
-  }
-
-  if (
-    step === "regenerating_html_chunks_completed" ||
-    step === "regenerating_css_chunks_completed" ||
-    step === "regenerating_website_chunks_completed" ||
-    step === "regenerating_html_css_chunks_completed" ||
-    step === "regenerating_html_and_styling_chunks_completed"
-  ) {
-    return COMBINED_CHUNK_STEP;
-  }
-
-  return step;
-}
+const HTML_REGEN_STEP = "regenerating_html";
+const CSS_REGEN_STEP = "regenerating_css";
+const HTML_CHUNK_STEP = "regenerating_html_chunks_completed";
+const CSS_CHUNK_STEP = "regenerating_css_chunks_completed";
+const HTML_CHUNK_STEP_INDEX = STEP_ORDER.indexOf(HTML_CHUNK_STEP);
+const CSS_CHUNK_STEP_INDEX = STEP_ORDER.indexOf(CSS_CHUNK_STEP);
 
 export default function RegeneratedWebsitePage() {
   const { id } = useParams<{ id: string }>();
@@ -64,16 +43,19 @@ export default function RegeneratedWebsitePage() {
   const [isRetrying, setIsRetrying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState<string>("");
-  const [combinedChunkProgress, setCombinedChunkProgress] = useState<
-    number | null
-  >(null);
+  const [htmlChunkProgress, setHtmlChunkProgress] = useState<number | null>(
+    null,
+  );
+  const [cssChunkProgress, setCssChunkProgress] = useState<number | null>(
+    null,
+  );
 
   const [retryError, setRetryError] = useState<string | null>(null);
 
   const ablyRef = useRef<Ably.Realtime | null>(null);
   const latestSeqRef = useRef<number>(-1);
-  const seenCombinedChunksRef = useRef<Set<number>>(new Set());
-  const lastChunkStepRef = useRef<string | null>(null);
+  const seenHtmlChunksRef = useRef<Set<number>>(new Set());
+  const seenCssChunksRef = useRef<Set<number>>(new Set());
   const maxProgressRef = useRef<number>(0);
 
   useEffect(() => {
@@ -101,41 +83,38 @@ export default function RegeneratedWebsitePage() {
       setStatus(payload);
 
       const chunkMatch = payload.message?.match(/(\d+) of (\d+)/i);
-      const normalizedStep = normalizeStep(payload.step);
-      const stepIndex = STEP_ORDER.indexOf(normalizedStep);
+      const stepIndex = STEP_ORDER.indexOf(payload.step ?? "");
 
       if (stepIndex !== -1) {
         let stepFraction = 1;
 
-        if (normalizedStep === COMBINED_CHUNK_STEP) {
-          if (payload.step !== lastChunkStepRef.current) {
-            seenCombinedChunksRef.current = new Set();
-            lastChunkStepRef.current = payload.step;
-          }
+        if (payload.step === HTML_CHUNK_STEP || payload.step === CSS_CHUNK_STEP) {
+          const seenRef =
+            payload.step === HTML_CHUNK_STEP ? seenHtmlChunksRef : seenCssChunksRef;
           if (chunkMatch) {
             const chunkNum = parseInt(chunkMatch[1]);
             const total = parseInt(chunkMatch[2]);
-            seenCombinedChunksRef.current.add(chunkNum);
-            stepFraction =
-              total > 0
-                ? Math.min(seenCombinedChunksRef.current.size / total, 1)
-                : 0;
+            seenRef.current.add(chunkNum);
+            stepFraction = total > 0 ? Math.min(seenRef.current.size / total, 1) : 0;
           } else {
             stepFraction = 0;
           }
           const pct = Math.round(stepFraction * 100);
-          setCombinedChunkProgress(pct);
+          (payload.step === HTML_CHUNK_STEP ? setHtmlChunkProgress : setCssChunkProgress)(pct);
           // currentStep is left untouched here — the sub-bar itself now shows
           // the percentage, so the step label just keeps showing whatever the
           // last non-chunked step's message was until the next one arrives.
         } else {
           if (payload.message) setCurrentStep(payload.message);
-          // Show the sub-bar at 0% as soon as regeneration starts.
-          if (normalizedStep === COMBINED_REGEN_STEP)
-            setCombinedChunkProgress(0);
-          // Once the pipeline has moved past chunked regeneration, hide the sub-bar.
-          if (stepIndex > COMBINED_CHUNK_STEP_INDEX)
-            setCombinedChunkProgress(null);
+          // Show each sub-bar at 0% as soon as its phase starts, rather than
+          // waiting for the first chunk-completion event.
+          if (payload.step === HTML_REGEN_STEP) setHtmlChunkProgress(0);
+          if (payload.step === CSS_REGEN_STEP) setCssChunkProgress(0);
+          // Once the pipeline has moved past a chunked step, hide its sub-bar —
+          // not just when it reaches 100%, but the moment the *next* step's
+          // event arrives.
+          if (stepIndex > HTML_CHUNK_STEP_INDEX) setHtmlChunkProgress(null);
+          if (stepIndex > CSS_CHUNK_STEP_INDEX) setCssChunkProgress(null);
         }
 
         // Never let displayed progress move backwards — a step's fraction can
@@ -245,9 +224,10 @@ export default function RegeneratedWebsitePage() {
       }
 
       latestSeqRef.current = -1;
-      seenCombinedChunksRef.current = new Set();
-      lastChunkStepRef.current = null;
-      setCombinedChunkProgress(null);
+      seenHtmlChunksRef.current = new Set();
+      seenCssChunksRef.current = new Set();
+      setHtmlChunkProgress(null);
+      setCssChunkProgress(null);
       setProgress(0);
       maxProgressRef.current = 0;
       setCurrentStep("");
@@ -293,7 +273,8 @@ export default function RegeneratedWebsitePage() {
         status={status}
         progress={progress}
         currentStep={currentStep}
-        combinedChunkProgress={combinedChunkProgress}
+        htmlChunkProgress={htmlChunkProgress}
+        cssChunkProgress={cssChunkProgress}
       />
     </div>
   );
