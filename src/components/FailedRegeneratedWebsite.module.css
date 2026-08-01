@@ -24,6 +24,11 @@
   text-align: center;
 }
 
+.friendlyCard {
+  border-color: rgba(245, 158, 11, 0.3);
+  max-width: 560px;
+}
+
 .iconWrapper {
   opacity: 0.9;
 }
@@ -45,6 +50,7 @@
 }
 
 .button {
+  display: inline-block;
   margin-top: 8px;
   padding: 12px 32px;
   background: transparent;
@@ -52,6 +58,7 @@
   border-radius: 8px;
   color: #ffffff;
   font-size: 0.95rem;
+  text-decoration: none;
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s;
 }
@@ -64,4 +71,52 @@
 .button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.examplesBlock {
+  width: 100%;
+  text-align: left;
+}
+
+.sectionLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #e5e5e5;
+  margin: 0 0 12px;
+}
+
+.exampleList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.exampleItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+
+.exampleLink {
+  color: #f59e0b;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.exampleLink:hover {
+  text-decoration: underline;
+}
+
+.exampleDescription {
+  font-size: 0.8rem;
+  color: #a0a0a0;
+  line-height: 1.5;
 }
