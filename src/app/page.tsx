@@ -2,9 +2,21 @@
 
 import styles from "./page.module.css";
 import CircuitBackground from "../components/CircuitBackground";
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from "next/navigation";
 import { ensureAnonymousSession } from "@/lib/supabase/ensureAnonymousSession";
+
+function isValidWebsiteUrl(candidate: string): boolean {
+  let hostname: string;
+  try {
+    hostname = new URL(candidate).hostname;
+  } catch {
+    return false;
+  }
+  // Require at least one dot and a letters-only TLD (e.g. ".com"), so
+  // things like "localhost" or "example" don't get treated as valid.
+  return /^[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/i.test(hostname);
+}
 
 export default function Home() {
   const [url, setUrl] = useState("");
@@ -12,6 +24,12 @@ export default function Home() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
 
+  useEffect(() => {
+    const prefillUrl = new URLSearchParams(window.location.search).get("url");
+    if (prefillUrl) {
+      setUrl(prefillUrl);
+    }
+  }, []);
 
   const router = useRouter();
 
@@ -20,13 +38,25 @@ export default function Home() {
     setStatus("loading");
     setErrorMsg(null);
 
+    const trimmedUrl = url.trim();
+    const normalizedUrl = /^https?:\/\//i.test(trimmedUrl)
+      ? trimmedUrl
+      : `https://${trimmedUrl}`;
+    setUrl(normalizedUrl);
+
+    if (!isValidWebsiteUrl(normalizedUrl)) {
+      setErrorMsg("Please enter a valid website URL (e.g. example.com)");
+      setStatus("error");
+      return;
+    }
+
     try {
       await ensureAnonymousSession();
 
       const res = await fetch("/api/regenerate-website", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, regenerationTheme: theme || undefined }),
+        body: JSON.stringify({ url: normalizedUrl, regenerationTheme: theme || undefined }),
       });
 
       const data: {
@@ -72,8 +102,9 @@ export default function Home() {
               <input
                 id="url"
                 className={styles.input}
-                type="url"
-                placeholder="https://example.com"
+                type="text"
+                inputMode="url"
+                placeholder="https://example.com or example.com"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 required

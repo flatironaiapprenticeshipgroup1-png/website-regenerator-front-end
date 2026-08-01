@@ -257,6 +257,7 @@ export default function RegeneratedWebsitePage() {
     return (
       <FailedRegeneratedWebsite
         errorReason={errorReason}
+        websiteUrl={regeneratedWebsiteRecord?.RegeneratedWebsiteUrl ?? null}
         onTryAgain={handleTryAgain}
         isRetrying={isRetrying}
         retryError={retryError}
